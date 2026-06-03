@@ -1,0 +1,26 @@
+# Secrets / environment
+.env
+.env.*
+!.env.example
+
+# Go
+/backend/server
+/backend/*.db
+/backend/*.db-shm
+/backend/*.db-wal
+*.test
+*.out
+
+# SQLite databases (any location)
+*.db
+*.db-shm
+*.db-wal
+
+# Node / Next.js (frontend has its own .gitignore too)
+node_modules/
+.next/
+out/
+
+# Editor / OS
+.DS_Store
+*.swp
