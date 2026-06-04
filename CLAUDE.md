@@ -117,11 +117,11 @@ No User, AgentProfile, Summary, or MatchProposal. Gone by design.
 - Note: the *skinny* version of "back to work" — the take-home prompt in the agent's own output file — is allowed and lives in the guide, since we never touch company data.
 ---
 ## Milestone tracker (update as completed)
-- [ ] 1 — Scaffold: Go module, stdlib `net/http`, templ+htmx, Tailwind CLI, JSON-file leaderboard store, `Makefile`, `.env.example` (`SERVER_SECRET`), README, `.gitignore`. Boots locally.
-- [ ] 2 — Seed knowledgebase: agenda + speakers in `/seed`, loaded into memory; content interface ready for slides/transcripts later.
-- [ ] 3 — Read-only MCP (HTTP): `list_sessions`, `get_session` (+ proof-of-fetch token), `list_speakers`, `get_leaderboard`.
-- [ ] 4 — Proof-of-fetch + claim: HMAC sign/verify, `POST /claim` (JSON body, ≥5 distinct), leaderboard upsert.
-- [ ] 5 — Wall of Fame website (public, big-screen) + "connect your agent" page.
-- [ ] 6 — `AGENT_GUIDE.md` + minimal ADK `agent-starter` (verify current ADK + MCP usage).
+- [x] 1 — Scaffold: Go module, stdlib `net/http`, templ+htmx, Tailwind CLI, JSON-file leaderboard store, `Makefile`, `.env.example` (`SERVER_SECRET`), README, `.gitignore`. Boots locally.
+- [x] 2 — Seed knowledgebase: agenda + speakers in `/seed`, loaded into memory; content interface ready for slides/transcripts later.
+- [x] 3 — Read-only MCP (HTTP): `list_sessions`, `get_session` (+ proof-of-fetch token), `list_speakers`, `get_leaderboard`.
+- [x] 4 — Proof-of-fetch + claim: HMAC sign/verify, `POST /claim` (JSON body, ≥5 distinct), leaderboard upsert.
+- [x] 5 — Wall of Fame website (public, big-screen) + "connect your agent" page.
+- [x] 6 — `AGENT_GUIDE.md` + minimal ADK `agent-starter` (verify current ADK + MCP usage).
 - [ ] 7 — Polish: empty/loading states, a celebratory wall, README demo script.
-**Current milestone: 1 — Scaffold.** Pause and check in at the end of each milestone.
+**Current milestone: 7 — Polish.** Pause and check in at the end of each milestone.
