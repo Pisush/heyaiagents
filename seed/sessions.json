@@ -1,0 +1,54 @@
+[
+  {
+    "id": "ses-001",
+    "title": "Building Production-Ready AI Agents with Go",
+    "track": "AI & Agents",
+    "time": "2026-06-18T09:00:00+02:00",
+    "duration_minutes": 45,
+    "abstract": "PLACEHOLDER — real content to be dropped in before the event. This talk explores patterns for building reliable, observable AI agents in Go, covering tool use, error recovery, and production deployment strategies.",
+    "speaker_ids": ["spk-001"],
+    "tags": ["go", "ai", "agents"],
+    "slides_text": null,
+    "transcript_text": null,
+    "placeholder": true
+  },
+  {
+    "id": "ses-002",
+    "title": "MCP: The Model Context Protocol Deep Dive",
+    "track": "Protocols & Standards",
+    "time": "2026-06-18T10:00:00+02:00",
+    "duration_minutes": 45,
+    "abstract": "PLACEHOLDER — real content to be dropped in before the event. An in-depth look at the Model Context Protocol: how it works, why it matters for interoperability, and how to implement servers and clients in any language.",
+    "speaker_ids": ["spk-002"],
+    "tags": ["mcp", "protocols", "interoperability"],
+    "slides_text": null,
+    "transcript_text": null,
+    "placeholder": true
+  },
+  {
+    "id": "ses-003",
+    "title": "Go Concurrency Patterns for High-Throughput Systems",
+    "track": "Go Internals",
+    "time": "2026-06-18T11:00:00+02:00",
+    "duration_minutes": 45,
+    "abstract": "PLACEHOLDER — real content to be dropped in before the event. Practical concurrency patterns in Go: goroutine pools, pipeline architectures, context propagation, and avoiding common pitfalls in high-throughput services.",
+    "speaker_ids": ["spk-003"],
+    "tags": ["go", "concurrency", "performance"],
+    "slides_text": null,
+    "transcript_text": null,
+    "placeholder": true
+  },
+  {
+    "id": "ses-004",
+    "title": "From Hackathon to Production: Lessons from the Field",
+    "track": "Experience Reports",
+    "time": "2026-06-18T14:00:00+02:00",
+    "duration_minutes": 45,
+    "abstract": "PLACEHOLDER — real content to be dropped in before the event. Real stories from engineers who took hackathon prototypes and turned them into production systems, with hard-won lessons on architecture, testing, and team dynamics.",
+    "speaker_ids": ["spk-004"],
+    "tags": ["production", "experience", "architecture"],
+    "slides_text": null,
+    "transcript_text": null,
+    "placeholder": true
+  }
+]
