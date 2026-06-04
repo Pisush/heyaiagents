@@ -1,6 +1,6 @@
 // Command server is the single binary for the HeyAI platform. It serves the
-// website (Wall of Fame + connect page) and, from Milestone 3, the read-only
-// MCP surface — both from one stdlib net/http server.
+// website (Wall of Fame + connect page) and the read-only MCP surface — both
+// from one stdlib net/http server.
 package main
 
 import (
@@ -15,8 +15,10 @@ import (
 
 	"github.com/pisush/heyaiagents/internal/config"
 	"github.com/pisush/heyaiagents/internal/content"
+	mcpserver "github.com/pisush/heyaiagents/internal/mcp"
 	"github.com/pisush/heyaiagents/internal/store"
 	"github.com/pisush/heyaiagents/internal/web"
+	"github.com/pisush/heyaiagents/seed"
 )
 
 func main() {
@@ -33,18 +35,33 @@ func main() {
 	if err != nil {
 		log.Fatalf("leaderboard store: %v", err)
 	}
-	_ = leaderboard // claim/read wiring lands in Milestone 4
 
-	// Knowledgebase: seeded into memory in Milestone 2. Empty for the scaffold.
-	kb := content.New(nil, nil)
+	// Knowledgebase: seed from embedded JSON files.
+	sessions, speakers, err := seed.Load()
+	if err != nil {
+		log.Fatalf("seed: %v", err)
+	}
+	log.Printf("loaded %d sessions, %d speakers from seed", len(sessions), len(speakers))
+	kb := content.New(sessions, speakers)
+
+	mcpURL := "http://localhost:" + cfg.Port + "/mcp"
 
 	mux := http.NewServeMux()
 
 	// Static assets (Tailwind output + htmx).
 	mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServer(http.Dir("web/static"))))
 
+	// MCP server (read-only).
+	mcpHandler := mcpserver.NewHandler(mcpserver.Dependencies{
+		Content:     kb,
+		Leaderboard: leaderboard,
+		Secret:      cfg.ServerSecret,
+	})
+	mux.Handle("/mcp", mcpHandler)
+	mux.Handle("/mcp/", mcpHandler)
+
 	// Website.
-	site := web.NewHandler(kb, "http://localhost:"+cfg.Port+"/mcp")
+	site := web.NewHandler(kb, leaderboard, cfg, mcpURL)
 	site.Routes(mux)
 
 	srv := &http.Server{

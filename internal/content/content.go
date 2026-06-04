@@ -8,21 +8,27 @@ package content
 // "Later" content drop adds them; the shape is fixed now so that change is
 // trivial.
 type Session struct {
-	ID             string  `json:"id"`
-	Title          string  `json:"title"`
-	Track          string  `json:"track"`
-	Time           string  `json:"time"`
-	Abstract       string  `json:"abstract"`
-	SlidesText     *string `json:"slides_text,omitempty"`
-	TranscriptText *string `json:"transcript_text,omitempty"`
+	ID              string   `json:"id"`
+	Title           string   `json:"title"`
+	Track           string   `json:"track"`
+	Time            string   `json:"time"`
+	DurationMinutes int      `json:"duration_minutes"`
+	Abstract        string   `json:"abstract"`
+	SpeakerIDs      []string `json:"speaker_ids"`
+	Tags            []string `json:"tags"`
+	SlidesText      *string  `json:"slides_text"`
+	TranscriptText  *string  `json:"transcript_text"`
 }
 
 // Speaker is a conference speaker tied to a single talk.
 type Speaker struct {
-	ID            string `json:"id"`
-	Name          string `json:"name"`
-	Bio           string `json:"bio"`
-	TalkSessionID string `json:"talk_session_id"`
+	ID            string  `json:"id"`
+	Name          string  `json:"name"`
+	Company       string  `json:"company"`
+	Bio           string  `json:"bio"`
+	Image         *string `json:"image"`
+	Social        *string `json:"social"`
+	TalkSessionID string  `json:"talk_session_id"`
 }
 
 // Store is the read-only in-memory knowledgebase. The seed loader (Milestone 2)

@@ -8,18 +8,11 @@ package web
 import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
-// WallEntry is the view model for one Wall of Fame row. (The store-backed type
-// arrives in Milestone 4; this keeps the template compiling now.)
-type WallEntry struct {
-	DisplayName  string
-	SocialHandle string
-	SessionCount int
-	Achievements []string
-}
+import "github.com/pisush/heyaiagents/internal/store"
 
 // wallPage renders the public Wall of Fame. Empty state is first-class — the
 // wall is shown on a big screen and starts empty before the event.
-func wallPage(entries []WallEntry) templ.Component {
+func wallPage(entries []store.Entry) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -74,7 +67,7 @@ func wallPage(entries []WallEntry) templ.Component {
 					var templ_7745c5c3_Var3 string
 					templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(rank(i))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/wall.templ`, Line: 32, Col: 79}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/wall.templ`, Line: 25, Col: 79}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 					if templ_7745c5c3_Err != nil {
@@ -87,7 +80,7 @@ func wallPage(entries []WallEntry) templ.Component {
 					var templ_7745c5c3_Var4 string
 					templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(e.DisplayName)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/wall.templ`, Line: 34, Col: 56}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/wall.templ`, Line: 27, Col: 56}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 					if templ_7745c5c3_Err != nil {
@@ -100,7 +93,7 @@ func wallPage(entries []WallEntry) templ.Component {
 					var templ_7745c5c3_Var5 string
 					templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(e.SocialHandle)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/wall.templ`, Line: 35, Col: 58}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/wall.templ`, Line: 28, Col: 58}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 					if templ_7745c5c3_Err != nil {
@@ -111,9 +104,9 @@ func wallPage(entries []WallEntry) templ.Component {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var6 string
-					templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(sessions(e.SessionCount))
+					templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(sessions(e.DistinctSessionCount))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/wall.templ`, Line: 38, Col: 81}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/wall.templ`, Line: 31, Col: 89}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 					if templ_7745c5c3_Err != nil {
@@ -184,7 +177,7 @@ func connectPage(mcpURL string, sessionCount int) templ.Component {
 			var templ_7745c5c3_Var9 string
 			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(mcpURL)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/wall.templ`, Line: 58, Col: 109}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/wall.templ`, Line: 51, Col: 109}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 			if templ_7745c5c3_Err != nil {
@@ -197,7 +190,7 @@ func connectPage(mcpURL string, sessionCount int) templ.Component {
 			var templ_7745c5c3_Var10 string
 			templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(sessions(sessionCount))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/wall.templ`, Line: 60, Col: 51}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/wall.templ`, Line: 53, Col: 51}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 			if templ_7745c5c3_Err != nil {

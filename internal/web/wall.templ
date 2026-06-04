@@ -1,17 +1,10 @@
 package web
 
-// WallEntry is the view model for one Wall of Fame row. (The store-backed type
-// arrives in Milestone 4; this keeps the template compiling now.)
-type WallEntry struct {
-	DisplayName  string
-	SocialHandle string
-	SessionCount int
-	Achievements []string
-}
+import "github.com/pisush/heyaiagents/internal/store"
 
 // wallPage renders the public Wall of Fame. Empty state is first-class — the
 // wall is shown on a big screen and starts empty before the event.
-templ wallPage(entries []WallEntry) {
+templ wallPage(entries []store.Entry) {
 	@layout("HeyAI — Wall of Fame") {
 		<header class="mb-10 text-center">
 			<h1 class="text-5xl font-black tracking-tight">Wall of Fame</h1>
@@ -35,7 +28,7 @@ templ wallPage(entries []WallEntry) {
 								<p class="text-sm text-slate-500">{ e.SocialHandle }</p>
 							</div>
 						</div>
-						<span class="text-lg font-mono text-emerald-400">{ sessions(e.SessionCount) }</span>
+						<span class="text-lg font-mono text-emerald-400">{ sessions(e.DistinctSessionCount) }</span>
 					</li>
 				}
 			</ol>
