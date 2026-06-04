@@ -5,7 +5,6 @@ package web
 
 import (
 	"net/http"
-	"strconv"
 
 	"github.com/pisush/heyaiagents/internal/config"
 	"github.com/pisush/heyaiagents/internal/content"
@@ -41,13 +40,3 @@ func (h *Handler) connect(w http.ResponseWriter, r *http.Request) {
 	render(w, r, connectPage(h.mcpURL, 5))
 }
 
-// rank renders a 1-based rank label from a 0-based index.
-func rank(i int) string { return strconv.Itoa(i + 1) }
-
-// sessions renders a session count with its unit.
-func sessions(n int) string {
-	if n == 1 {
-		return "1 session"
-	}
-	return strconv.Itoa(n) + " sessions"
-}

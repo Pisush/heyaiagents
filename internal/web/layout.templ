@@ -1,7 +1,7 @@
 package web
 
-// layout is the shared HTML shell: Tailwind output + htmx, dark big-screen
-// friendly base for the Wall of Fame.
+// layout is the shared HTML shell. Two variants: the default narrow layout
+// for the connect page, and the full-bleed wall layout for big-screen display.
 templ layout(title string) {
 	<!DOCTYPE html>
 	<html lang="en" class="h-full">
@@ -13,9 +13,29 @@ templ layout(title string) {
 			<script src="/static/htmx.min.js" defer></script>
 		</head>
 		<body class="h-full bg-slate-950 text-slate-100 antialiased">
-			<main class="mx-auto max-w-5xl px-6 py-10">
+			<main class="mx-auto max-w-4xl px-6 py-10">
 				{ children... }
 			</main>
+		</body>
+	</html>
+}
+
+// wallLayout is a full-bleed layout for the Wall of Fame — designed to look
+// great on a conference big screen.
+templ wallLayout(title string) {
+	<!DOCTYPE html>
+	<html lang="en" class="h-full">
+		<head>
+			<meta charset="utf-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1"/>
+			<title>{ title }</title>
+			<link rel="stylesheet" href="/static/app.css"/>
+			<script src="/static/htmx.min.js" defer></script>
+			// Auto-refresh every 30 s so the big screen stays live without manual reload.
+			<meta http-equiv="refresh" content="30"/>
+		</head>
+		<body class="min-h-full bg-slate-950 text-slate-100 antialiased">
+			{ children... }
 		</body>
 	</html>
 }

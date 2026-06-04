@@ -1,60 +1,139 @@
 package web
 
-import "github.com/pisush/heyaiagents/internal/store"
+import (
+	"strconv"
 
-// wallPage renders the public Wall of Fame. Empty state is first-class — the
-// wall is shown on a big screen and starts empty before the event.
-templ wallPage(entries []store.Entry) {
-	@layout("HeyAI — Wall of Fame") {
-		<header class="mb-10 text-center">
-			<h1 class="text-5xl font-black tracking-tight">Wall of Fame</h1>
-			<p class="mt-3 text-lg text-slate-400">
-				The conference you attend through the agent you built last night.
-			</p>
-		</header>
-		if len(entries) == 0 {
-			<div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-16 text-center">
-				<p class="text-2xl font-semibold text-slate-300">No one on the wall yet.</p>
-				<p class="mt-2 text-slate-500">Cover 5 sessions with your agent to be the first.</p>
-			</div>
-		} else {
-			<ol class="space-y-3">
-				for i, e := range entries {
-					<li class="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-900/60 px-6 py-4">
-						<div class="flex items-center gap-4">
-							<span class="w-8 text-right text-2xl font-bold text-slate-600">{ rank(i) }</span>
-							<div>
-								<p class="text-xl font-semibold">{ e.DisplayName }</p>
-								<p class="text-sm text-slate-500">{ e.SocialHandle }</p>
-							</div>
-						</div>
-						<span class="text-lg font-mono text-emerald-400">{ sessions(e.DistinctSessionCount) }</span>
-					</li>
-				}
-			</ol>
-		}
-		<footer class="mt-12 text-center text-sm text-slate-600">
-			<a href="/connect" class="underline hover:text-slate-400">Connect your agent →</a>
-		</footer>
+	"github.com/pisush/heyaiagents/internal/store"
+)
+
+// achievementLabel returns a human-readable badge for a known achievement key.
+func achievementLabel(key string) string {
+	switch key {
+	case "wall_of_fame":
+		return "Wall of Fame"
+	case "completionist":
+		return "Completionist"
+	default:
+		return key
 	}
 }
 
-// connectPage is a short "point your agent here" page.
+// wallPage renders the public Wall of Fame on a big-screen-friendly dark canvas.
+// Empty state is first-class — the wall starts empty before the event.
+templ wallPage(entries []store.Entry) {
+	@wallLayout("HeyAI — Wall of Fame") {
+		<div class="mx-auto max-w-5xl px-6 py-12">
+			// Header
+			<header class="mb-12 text-center">
+				<p class="text-sm font-semibold uppercase tracking-widest text-emerald-500 mb-3">HeyAI — Berlin — June 2026</p>
+				<h1 class="text-6xl font-black tracking-tight">Wall of Fame</h1>
+				<p class="mt-4 text-xl text-slate-400 max-w-xl mx-auto">
+					The conference you attend through the agent you built last night.
+				</p>
+			</header>
+			// Board
+			if len(entries) == 0 {
+				<div class="rounded-3xl border border-slate-800 bg-slate-900/40 p-20 text-center">
+					<p class="text-5xl mb-4">🤖</p>
+					<p class="text-2xl font-semibold text-slate-300">The wall is empty.</p>
+					<p class="mt-3 text-lg text-slate-500">Be the first — cover 5 sessions with your agent.</p>
+					<p class="mt-8 text-slate-600 text-sm">
+						<a href="/connect" class="underline hover:text-slate-400">Connect your agent →</a>
+					</p>
+				</div>
+			} else {
+				<ol class="space-y-4">
+					for i, e := range entries {
+						<li class={ entryClass(i) }>
+							// Rank
+							<span class="text-3xl font-black tabular-nums text-slate-600 w-10 text-right shrink-0">
+								{ strconv.Itoa(i + 1) }
+							</span>
+							// Name + handle + achievements
+							<div class="flex-1 min-w-0">
+								<div class="flex items-center gap-3 flex-wrap">
+									<p class="text-2xl font-bold truncate">{ e.DisplayName }</p>
+									if len(e.Achievements) > 0 {
+										for _, a := range e.Achievements {
+											<span class={ badgeClass(a) }>{ achievementLabel(a) }</span>
+										}
+									}
+								</div>
+								<p class="text-slate-500 text-sm mt-0.5">{ e.SocialHandle }</p>
+							</div>
+							// Session count
+							<div class="text-right shrink-0">
+								<p class="text-3xl font-black tabular-nums text-emerald-400">{ strconv.Itoa(e.DistinctSessionCount) }</p>
+								<p class="text-xs text-slate-600 uppercase tracking-wide">sessions</p>
+							</div>
+						</li>
+					}
+				</ol>
+				<footer class="mt-10 text-center text-sm text-slate-700">
+					<a href="/connect" class="underline hover:text-slate-500">Connect your agent →</a>
+				</footer>
+			}
+		</div>
+	}
+}
+
+func entryClass(i int) string {
+	base := "flex items-center gap-5 rounded-2xl border px-7 py-5 "
+	if i == 0 {
+		return base + "border-emerald-700/60 bg-emerald-950/40 shadow-lg shadow-emerald-950/30"
+	}
+	if i == 1 {
+		return base + "border-slate-600/60 bg-slate-900/60"
+	}
+	return base + "border-slate-800/60 bg-slate-900/30"
+}
+
+func badgeClass(key string) string {
+	switch key {
+	case "completionist":
+		return "rounded-full bg-amber-500/20 px-2.5 py-0.5 text-xs font-semibold text-amber-300 border border-amber-500/30"
+	default:
+		return "rounded-full bg-emerald-500/20 px-2.5 py-0.5 text-xs font-semibold text-emerald-300 border border-emerald-500/30"
+	}
+}
+
+// connectPage is the "point your agent here" page.
 templ connectPage(mcpURL string, sessionCount int) {
 	@layout("HeyAI — Connect your agent") {
 		<header class="mb-8">
 			<a href="/" class="text-sm text-slate-500 underline hover:text-slate-300">← Wall of Fame</a>
 			<h1 class="mt-4 text-4xl font-black tracking-tight">Connect your agent</h1>
-		</header>
-		<section class="space-y-4 text-slate-300">
-			<p>Point your agent's MCP client at this URL:</p>
-			<pre class="overflow-x-auto rounded-lg border border-slate-800 bg-slate-900 p-4 text-emerald-400">{ mcpURL }</pre>
-			<p>
-				Pull the agenda, cover { sessions(sessionCount) }, bank a proof-of-fetch
-				token per session, and POST <code class="text-emerald-400">/claim</code> once
-				you have 5 distinct ones to join the wall.
+			<p class="mt-2 text-slate-400">
+				HeyAI is the conference you attend through the agent you built last night.
 			</p>
-			<p class="text-slate-500">See AGENT_GUIDE.md for the full spec.</p>
-		</section>
+		</header>
+		<div class="space-y-8 text-slate-300">
+			// MCP endpoint
+			<section>
+				<h2 class="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-2">1 — MCP endpoint</h2>
+				<pre class="overflow-x-auto rounded-xl border border-slate-800 bg-slate-900 p-4 text-emerald-400 text-sm">{ mcpURL }</pre>
+				<p class="mt-2 text-sm text-slate-500">Streamable HTTP transport. Tools: list_sessions · get_session · list_speakers · get_leaderboard</p>
+			</section>
+			// Claim
+			<section>
+				<h2 class="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-2">2 — Claim your spot</h2>
+				<p class="text-sm">
+					Cover { strconv.Itoa(sessionCount) } or more distinct sessions — each <code class="text-emerald-400">get_session</code> call
+					returns a signed proof-of-fetch token. When you have 5, POST to <code class="text-emerald-400">/claim</code>:
+				</p>
+				<pre class="mt-3 overflow-x-auto rounded-xl border border-slate-800 bg-slate-900 p-4 text-sm text-slate-300">POST /claim  (Content-Type: application/json)
+tokens:[...] leaderboard_opt_in:true display_name:"You" social_handle:"@you"</pre>
+			</section>
+			// Guide
+			<section>
+				<h2 class="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-2">3 — Full spec</h2>
+				<p class="text-sm">
+					See the complete framework-neutral guide and ADK starter:
+				</p>
+				<p class="mt-1 text-sm">
+					<a href="https://github.com/pisush/heyaiagents/blob/main/AGENT_GUIDE.md" class="text-emerald-400 underline hover:text-emerald-300">AGENT_GUIDE.md</a>
+				</p>
+			</section>
+		</div>
 	}
 }

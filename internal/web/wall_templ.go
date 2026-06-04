@@ -8,10 +8,26 @@ package web
 import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
-import "github.com/pisush/heyaiagents/internal/store"
+import (
+	"strconv"
 
-// wallPage renders the public Wall of Fame. Empty state is first-class — the
-// wall is shown on a big screen and starts empty before the event.
+	"github.com/pisush/heyaiagents/internal/store"
+)
+
+// achievementLabel returns a human-readable badge for a known achievement key.
+func achievementLabel(key string) string {
+	switch key {
+	case "wall_of_fame":
+		return "Wall of Fame"
+	case "completionist":
+		return "Completionist"
+	default:
+		return key
+	}
+}
+
+// wallPage renders the public Wall of Fame on a big-screen-friendly dark canvas.
+// Empty state is first-class — the wall starts empty before the event.
 func wallPage(entries []store.Entry) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -45,90 +61,151 @@ func wallPage(entries []store.Entry) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<header class=\"mb-10 text-center\"><h1 class=\"text-5xl font-black tracking-tight\">Wall of Fame</h1><p class=\"mt-3 text-lg text-slate-400\">The conference you attend through the agent you built last night.</p></header>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"mx-auto max-w-5xl px-6 py-12\"><header class=\"mb-12 text-center\"><p class=\"text-sm font-semibold uppercase tracking-widest text-emerald-500 mb-3\">HeyAI — Berlin — June 2026</p><h1 class=\"text-6xl font-black tracking-tight\">Wall of Fame</h1><p class=\"mt-4 text-xl text-slate-400 max-w-xl mx-auto\">The conference you attend through the agent you built last night.</p></header>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if len(entries) == 0 {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"rounded-2xl border border-slate-800 bg-slate-900/50 p-16 text-center\"><p class=\"text-2xl font-semibold text-slate-300\">No one on the wall yet.</p><p class=\"mt-2 text-slate-500\">Cover 5 sessions with your agent to be the first.</p></div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"rounded-3xl border border-slate-800 bg-slate-900/40 p-20 text-center\"><p class=\"text-5xl mb-4\">🤖</p><p class=\"text-2xl font-semibold text-slate-300\">The wall is empty.</p><p class=\"mt-3 text-lg text-slate-500\">Be the first — cover 5 sessions with your agent.</p><p class=\"mt-8 text-slate-600 text-sm\"><a href=\"/connect\" class=\"underline hover:text-slate-400\">Connect your agent →</a></p></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			} else {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<ol class=\"space-y-3\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<ol class=\"space-y-4\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				for i, e := range entries {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<li class=\"flex items-center justify-between rounded-xl border border-slate-800 bg-slate-900/60 px-6 py-4\"><div class=\"flex items-center gap-4\"><span class=\"w-8 text-right text-2xl font-bold text-slate-600\">")
+					var templ_7745c5c3_Var3 = []any{entryClass(i)}
+					templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var3...)
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					var templ_7745c5c3_Var3 string
-					templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(rank(i))
-					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/wall.templ`, Line: 25, Col: 79}
-					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</span><div><p class=\"text-xl font-semibold\">")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<li class=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var4 string
-					templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(e.DisplayName)
+					templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var3).String())
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/wall.templ`, Line: 27, Col: 56}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/wall.templ`, Line: 1, Col: 0}
 					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var4)
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</p><p class=\"text-sm text-slate-500\">")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "\"><span class=\"text-3xl font-black tabular-nums text-slate-600 w-10 text-right shrink-0\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var5 string
-					templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(e.SocialHandle)
+					templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(i + 1))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/wall.templ`, Line: 28, Col: 58}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/wall.templ`, Line: 50, Col: 29}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</p></div></div><span class=\"text-lg font-mono text-emerald-400\">")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</span><div class=\"flex-1 min-w-0\"><div class=\"flex items-center gap-3 flex-wrap\"><p class=\"text-2xl font-bold truncate\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var6 string
-					templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(sessions(e.DistinctSessionCount))
+					templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(e.DisplayName)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/wall.templ`, Line: 31, Col: 89}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/wall.templ`, Line: 55, Col: 63}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "</span></li>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</p>")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					if len(e.Achievements) > 0 {
+						for _, a := range e.Achievements {
+							var templ_7745c5c3_Var7 = []any{badgeClass(a)}
+							templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var7...)
+							if templ_7745c5c3_Err != nil {
+								return templ_7745c5c3_Err
+							}
+							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<span class=\"")
+							if templ_7745c5c3_Err != nil {
+								return templ_7745c5c3_Err
+							}
+							var templ_7745c5c3_Var8 string
+							templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var7).String())
+							if templ_7745c5c3_Err != nil {
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/wall.templ`, Line: 1, Col: 0}
+							}
+							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var8)
+							if templ_7745c5c3_Err != nil {
+								return templ_7745c5c3_Err
+							}
+							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "\">")
+							if templ_7745c5c3_Err != nil {
+								return templ_7745c5c3_Err
+							}
+							var templ_7745c5c3_Var9 string
+							templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(achievementLabel(a))
+							if templ_7745c5c3_Err != nil {
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/wall.templ`, Line: 58, Col: 62}
+							}
+							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
+							if templ_7745c5c3_Err != nil {
+								return templ_7745c5c3_Err
+							}
+							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "</span>")
+							if templ_7745c5c3_Err != nil {
+								return templ_7745c5c3_Err
+							}
+						}
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</div><p class=\"text-slate-500 text-sm mt-0.5\">")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var10 string
+					templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(e.SocialHandle)
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/wall.templ`, Line: 62, Col: 65}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "</p></div><div class=\"text-right shrink-0\"><p class=\"text-3xl font-black tabular-nums text-emerald-400\">")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var11 string
+					templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(e.DistinctSessionCount))
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/wall.templ`, Line: 66, Col: 107}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "</p><p class=\"text-xs text-slate-600 uppercase tracking-wide\">sessions</p></div></li>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "</ol>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "</ol><footer class=\"mt-10 text-center text-sm text-slate-700\"><a href=\"/connect\" class=\"underline hover:text-slate-500\">Connect your agent →</a></footer>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, " <footer class=\"mt-12 text-center text-sm text-slate-600\"><a href=\"/connect\" class=\"underline hover:text-slate-400\">Connect your agent →</a></footer>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "</div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			return nil
 		})
-		templ_7745c5c3_Err = layout("HeyAI — Wall of Fame").Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = wallLayout("HeyAI — Wall of Fame").Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -136,7 +213,27 @@ func wallPage(entries []store.Entry) templ.Component {
 	})
 }
 
-// connectPage is a short "point your agent here" page.
+func entryClass(i int) string {
+	base := "flex items-center gap-5 rounded-2xl border px-7 py-5 "
+	if i == 0 {
+		return base + "border-emerald-700/60 bg-emerald-950/40 shadow-lg shadow-emerald-950/30"
+	}
+	if i == 1 {
+		return base + "border-slate-600/60 bg-slate-900/60"
+	}
+	return base + "border-slate-800/60 bg-slate-900/30"
+}
+
+func badgeClass(key string) string {
+	switch key {
+	case "completionist":
+		return "rounded-full bg-amber-500/20 px-2.5 py-0.5 text-xs font-semibold text-amber-300 border border-amber-500/30"
+	default:
+		return "rounded-full bg-emerald-500/20 px-2.5 py-0.5 text-xs font-semibold text-emerald-300 border border-emerald-500/30"
+	}
+}
+
+// connectPage is the "point your agent here" page.
 func connectPage(mcpURL string, sessionCount int) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -153,12 +250,12 @@ func connectPage(mcpURL string, sessionCount int) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var7 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var7 == nil {
-			templ_7745c5c3_Var7 = templ.NopComponent
+		templ_7745c5c3_Var12 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var12 == nil {
+			templ_7745c5c3_Var12 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Var8 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_Var13 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 			templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 			templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
 			if !templ_7745c5c3_IsBuffer {
@@ -170,39 +267,39 @@ func connectPage(mcpURL string, sessionCount int) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<header class=\"mb-8\"><a href=\"/\" class=\"text-sm text-slate-500 underline hover:text-slate-300\">← Wall of Fame</a><h1 class=\"mt-4 text-4xl font-black tracking-tight\">Connect your agent</h1></header><section class=\"space-y-4 text-slate-300\"><p>Point your agent's MCP client at this URL:</p><pre class=\"overflow-x-auto rounded-lg border border-slate-800 bg-slate-900 p-4 text-emerald-400\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "<header class=\"mb-8\"><a href=\"/\" class=\"text-sm text-slate-500 underline hover:text-slate-300\">← Wall of Fame</a><h1 class=\"mt-4 text-4xl font-black tracking-tight\">Connect your agent</h1><p class=\"mt-2 text-slate-400\">HeyAI is the conference you attend through the agent you built last night.</p></header><div class=\"space-y-8 text-slate-300\"><section><h2 class=\"text-xs font-semibold uppercase tracking-widest text-slate-500 mb-2\">1 — MCP endpoint</h2><pre class=\"overflow-x-auto rounded-xl border border-slate-800 bg-slate-900 p-4 text-emerald-400 text-sm\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var9 string
-			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(mcpURL)
+			var templ_7745c5c3_Var14 string
+			templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(mcpURL)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/wall.templ`, Line: 51, Col: 109}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/wall.templ`, Line: 114, Col: 118}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "</pre><p>Pull the agenda, cover ")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var10 string
-			templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(sessions(sessionCount))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/wall.templ`, Line: 53, Col: 51}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "</pre><p class=\"mt-2 text-sm text-slate-500\">Streamable HTTP transport. Tools: list_sessions · get_session · list_speakers · get_leaderboard</p></section><section><h2 class=\"text-xs font-semibold uppercase tracking-widest text-slate-500 mb-2\">2 — Claim your spot</h2><p class=\"text-sm\">Cover ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, ", bank a proof-of-fetch token per session, and POST <code class=\"text-emerald-400\">/claim</code> once you have 5 distinct ones to join the wall.</p><p class=\"text-slate-500\">See AGENT_GUIDE.md for the full spec.</p></section>")
+			var templ_7745c5c3_Var15 string
+			templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(sessionCount))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/wall.templ`, Line: 121, Col: 39}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, " or more distinct sessions — each <code class=\"text-emerald-400\">get_session</code> call returns a signed proof-of-fetch token. When you have 5, POST to <code class=\"text-emerald-400\">/claim</code>:</p><pre class=\"mt-3 overflow-x-auto rounded-xl border border-slate-800 bg-slate-900 p-4 text-sm text-slate-300\">POST /claim  (Content-Type: application/json) tokens:[...] leaderboard_opt_in:true display_name:\"You\" social_handle:\"@you\"</pre></section><section><h2 class=\"text-xs font-semibold uppercase tracking-widest text-slate-500 mb-2\">3 — Full spec</h2><p class=\"text-sm\">See the complete framework-neutral guide and ADK starter:</p><p class=\"mt-1 text-sm\"><a href=\"https://github.com/pisush/heyaiagents/blob/main/AGENT_GUIDE.md\" class=\"text-emerald-400 underline hover:text-emerald-300\">AGENT_GUIDE.md</a></p></section></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			return nil
 		})
-		templ_7745c5c3_Err = layout("HeyAI — Connect your agent").Render(templ.WithChildren(ctx, templ_7745c5c3_Var8), templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = layout("HeyAI — Connect your agent").Render(templ.WithChildren(ctx, templ_7745c5c3_Var13), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
