@@ -3,23 +3,17 @@
 .env.*
 !.env.example
 
-# Go
-/backend/server
-/backend/*.db
-/backend/*.db-shm
-/backend/*.db-wal
+# Durable state (the leaderboard JSON file)
+/leaderboard.json
+*.leaderboard-*.tmp
+
+# Standalone Tailwind CLI binary (download per-machine — see README)
+/bin/
+
+# Go build artifacts
+/server
 *.test
 *.out
-
-# SQLite databases (any location)
-*.db
-*.db-shm
-*.db-wal
-
-# Node / Next.js (frontend has its own .gitignore too)
-node_modules/
-.next/
-out/
 
 # Editor / OS
 .DS_Store

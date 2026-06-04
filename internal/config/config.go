@@ -1,0 +1,82 @@
+// Package config holds runtime configuration and global constants for the
+// HeyAI platform: the server secret used to sign proof-of-fetch tokens, the
+// event window claims are checked against, and the HTTP listen port.
+package config
+
+import (
+	"fmt"
+	"os"
+	"time"
+)
+
+// Config is the runtime configuration, loaded from the environment.
+type Config struct {
+	// ServerSecret signs and verifies proof-of-fetch tokens. Required.
+	ServerSecret string
+	// Port is the TCP port the single web server listens on.
+	Port string
+	// LeaderboardPath is the on-disk location of the leaderboard JSON file.
+	LeaderboardPath string
+	// EventStart and EventEnd bound the window in which a token's issued_at
+	// must fall to count toward the wall.
+	EventStart time.Time
+	EventEnd   time.Time
+}
+
+// Load reads configuration from the environment, applying defaults. It returns
+// an error only for values that cannot be parsed; a missing ServerSecret is
+// surfaced via Warnings so the scaffold still boots for local development.
+func Load() (Config, error) {
+	cfg := Config{
+		ServerSecret:    os.Getenv("SERVER_SECRET"),
+		Port:            envOr("PORT", "8080"),
+		LeaderboardPath: envOr("LEADERBOARD_PATH", "./leaderboard.json"),
+	}
+
+	start, err := parseTime("EVENT_START", "2026-06-17T00:00:00Z")
+	if err != nil {
+		return Config{}, err
+	}
+	end, err := parseTime("EVENT_END", "2026-06-18T23:59:59Z")
+	if err != nil {
+		return Config{}, err
+	}
+	cfg.EventStart = start
+	cfg.EventEnd = end
+	return cfg, nil
+}
+
+// Warnings returns non-fatal configuration issues to log at boot.
+func (c Config) Warnings() []string {
+	var w []string
+	if c.ServerSecret == "" {
+		w = append(w, "SERVER_SECRET is not set — proof-of-fetch tokens cannot be signed or verified")
+	}
+	return w
+}
+
+// Addr returns the listen address for the HTTP server.
+func (c Config) Addr() string {
+	return ":" + c.Port
+}
+
+// WithinEventWindow reports whether t falls inside the configured event window.
+func (c Config) WithinEventWindow(t time.Time) bool {
+	return !t.Before(c.EventStart) && !t.After(c.EventEnd)
+}
+
+func parseTime(key, fallback string) (time.Time, error) {
+	raw := envOr(key, fallback)
+	t, err := time.Parse(time.RFC3339, raw)
+	if err != nil {
+		return time.Time{}, fmt.Errorf("parse %s=%q as RFC3339: %w", key, raw, err)
+	}
+	return t, nil
+}
+
+func envOr(key, fallback string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return fallback
+}

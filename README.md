@@ -1,67 +1,66 @@
-# HeyAI Agents
+# HeyAI Platform
 
-A web platform where conference attendees build a personal AI agent that
-virtually attends HeyAI on their behalf. Each agent reviews session slides and
-transcripts, produces personalized summaries grounded in its owner's knowledge
-and current work, networks with other agents toward explicit goals, and earns
-recognition and swag through an achievement system.
+**HeyAI is the conference you attend through the agent you built last night.**
 
-Three MVP capabilities: **Coverage**, **Networking**, and **Recognition & Swag**.
+This repo is the skinny Go platform attendee agents plug into — plus the
+artifacts attendees build their agents from. The platform itself holds **no agent
+intelligence and makes no LLM calls**. It serves, from one Go binary:
 
-## Architecture
+1. A **read-only MCP** surface (over HTTP) — the conference knowledgebase
+   (agenda + speakers), issuing a signed **proof-of-fetch token** on each read.
+2. A **website** — the public **Wall of Fame** (big-screen friendly), a
+   "connect your agent" page, and one unauthenticated **`POST /claim`** endpoint.
 
-Hybrid: **Go backend + Next.js/TypeScript frontend.** All backend work that can
-be done in Go is done in Go (HTTP API, agent task functions, DB access, LLM
-calls, business logic). The frontend is Next.js and talks to the Go API over
-HTTP. See [`CLAUDE.md`](./CLAUDE.md) for the full design, data model, and rules.
+Agents pull sessions, summarize them privately for their human, bank a token per
+session, and `POST /claim` once they've covered **5 distinct sessions** to join
+the wall. See [`CLAUDE.md`](./CLAUDE.md) for the full design and rules.
+
+## Stack
+
+- **Go** (1.22+), stdlib `net/http` — one binary serves MCP + website
+- **templ + htmx** for the UI, styled with the **standalone Tailwind CLI** (no Node)
+- **MCP**: `github.com/modelcontextprotocol/go-sdk` (read-only, HTTP)
+- **Persistence**: a single **JSON file** for the leaderboard — no database
+- **Tokens**: `crypto/hmac` + SHA-256, keyed by `SERVER_SECRET`
+- **No LLM.** Intelligence lives in the attendee agents (`agent-starter/` + `AGENT_GUIDE.md`)
+
+## Repo layout
 
 ```
-/backend     Go module: net/http API, SQLite, Anthropic Go SDK
-/frontend    Next.js (App Router) + TypeScript + Tailwind
+cmd/server        one web server: MCP (HTTP) + website
+internal/         config, content (in-memory KB), mcp, tokens, wall, web, store (JSON leaderboard)
+seed/             agenda + speakers content (Milestone 2)
+web/static        Tailwind output + htmx
+web/styles        Tailwind input
 ```
-
-| Layer | Choice |
-|---|---|
-| Backend | Go, stdlib `net/http`, SQLite (`modernc.org/sqlite`), `sqlc` |
-| LLM | Anthropic Messages API via `anthropic-sdk-go` (server-side only) |
-| Model | `claude-sonnet-4-6` (single constant in `backend/internal/config`) |
-| Frontend | Next.js + TypeScript (strict) + Tailwind + zod |
 
 ## Prerequisites
 
-- Go 1.25+
-- Node.js 20+ and npm
-
-## Setup
+- Go 1.22+
+- The standalone Tailwind CLI (no Node). Download once into `./bin/`:
 
 ```bash
-cp .env.example .env   # then fill in ANTHROPIC_API_KEY
+mkdir -p bin
+curl -sL -o bin/tailwindcss \
+  https://github.com/tailwindlabs/tailwindcss/releases/latest/download/tailwindcss-linux-x64
+chmod +x bin/tailwindcss
 ```
 
-## Demo run (two terminals)
+(`bin/` is gitignored. Swap `linux-x64` for your platform's asset name.)
 
-Backend:
+## Run
 
 ```bash
-cd backend
-go run ./cmd/server
-# listening on :8080 — GET /healthz, GET /api/version
+cp .env.example .env          # then set SERVER_SECRET (openssl rand -hex 32)
+make run                      # regenerates templ + CSS, then starts the server
+# open http://localhost:8080  → Wall of Fame (empty until claims arrive)
 ```
 
-Frontend:
-
-```bash
-cd frontend
-npm install
-npm run dev
-# open http://localhost:3000 — the landing page shows live backend status
-```
-
-If the backend is running, the frontend landing page reports the API and
-database as **online**. That round-trip confirms the two halves are wired up.
+Useful targets: `make generate` (templ + Tailwind), `make build`, `make test`.
 
 ## Status
 
-Milestone 1 — Scaffold. Business logic (coverage, networking, achievements) and
-the real data schema arrive in later milestones; see the milestone tracker in
+**Milestone 1 — Scaffold.** The server boots and serves the Wall of Fame and
+connect page. The MCP surface, proof-of-fetch tokens, `POST /claim`, and the
+seeded knowledgebase arrive in later milestones — see the tracker in
 [`CLAUDE.md`](./CLAUDE.md).

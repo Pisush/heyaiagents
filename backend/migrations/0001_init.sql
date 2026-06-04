@@ -1,8 +1,0 @@
--- Migration 0001 — placeholder.
---
--- The real schema (User, AgentProfile, OpenSourceProject, Conference, Session,
--- SessionContent, Summary, DailyDigest, MatchProposal, Achievement,
--- AchievementUnlock) lands in Milestone 2. SQL here is kept
--- Postgres-compatible so the store can be swapped from SQLite later.
---
--- This file exists so the migration + sqlc toolchain is wired during scaffold.
