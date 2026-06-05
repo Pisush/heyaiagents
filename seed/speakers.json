@@ -1,42 +1,65 @@
 [
   {
     "id": "spk-001",
-    "name": "Alex Placeholder",
-    "company": "GopherCorp",
-    "bio": "PLACEHOLDER — real bio to be added before the event. Alex is a senior engineer with 10 years of Go experience, currently building AI infrastructure at GopherCorp.",
-    "image": null,
-    "social": "@alexplaceholder",
-    "talk_session_id": "ses-001",
-    "placeholder": true
+    "name": "Mariano Cocirio",
+    "company": "DeepMind",
+    "bio": "Product Manager at Google DeepMind, focusing on agentic capabilities within Gemini.",
+    "image": "https://heyai.dev/assets/speakers/mariano.cocirio.png",
+    "social": "https://www.linkedin.com/in/mcocirio/",
+    "talk_session_id": "session-001"
   },
   {
     "id": "spk-002",
-    "name": "Sam Placeholder",
-    "company": "Protocol Labs",
-    "bio": "PLACEHOLDER — real bio to be added before the event. Sam works on open standards for AI interoperability and has contributed to the MCP specification.",
-    "image": null,
-    "social": "@samplaceholder",
-    "talk_session_id": "ses-002",
-    "placeholder": true
+    "name": "Johan Janssens",
+    "company": "Joomla!",
+    "bio": "Joomla! co-founder. Now building a multi-threaded PHP runtime in C, solo, with AI.",
+    "image": "https://heyai.dev/assets/speakers/johan.janssens.jpg",
+    "social": "https://twitter.com/johanjanssens",
+    "talk_session_id": "session-002"
   },
   {
     "id": "spk-003",
-    "name": "Jordan Placeholder",
-    "company": "Concurrent Systems",
-    "bio": "PLACEHOLDER — real bio to be added before the event. Jordan is the author of several popular Go concurrency libraries and a frequent speaker at GopherCon.",
-    "image": null,
-    "social": "@jordanplaceholder",
-    "talk_session_id": "ses-003",
-    "placeholder": true
+    "name": "Sasha Denisov",
+    "company": "Brainform.ai",
+    "bio": "CTO at Brainform.ai with 20+ years of experience architecting scalable enterprise systems. Google Developer Expert for Cloud, AI, Firebase, Flutter, and Dart. International speaker at 30+ conferences worldwide.",
+    "image": "https://heyai.dev/assets/speakers/sasha.denisov.jpg",
+    "social": "https://www.linkedin.com/in/aleks-denisov/",
+    "talk_session_id": "session-003"
+  },
+  {
+    "id": "spk-006",
+    "name": "Ron Tamerin",
+    "company": "TamerinTECH",
+    "bio": "AI architect and software developer with over 20 years of experience building complex software, cloud, and GenAI systems. Focused on EdTech and smart AI solutions for education, including AI-based learning tools, knowledge systems, and practical classroom applications.",
+    "image": "https://heyai.dev/assets/speakers/ron.tamerin.jpg",
+    "social": "https://www.linkedin.com/in/ron-tamerin-tech/",
+    "talk_session_id": "session-006"
   },
   {
     "id": "spk-004",
-    "name": "Taylor Placeholder",
-    "company": "BuildFast Inc",
-    "bio": "PLACEHOLDER — real bio to be added before the event. Taylor has scaled three startup engineering teams and loves turning messy prototypes into elegant production systems.",
-    "image": null,
-    "social": "@taylorplaceholder",
-    "talk_session_id": "ses-004",
-    "placeholder": true
+    "name": "Yusef Mohamadi",
+    "company": "Delivery Hero",
+    "bio": "Software engineer with a Master's in AI, combining both to build intelligent operational systems. Currently at Delivery Hero, driving speed and efficiency with AI orchestration at scale.",
+    "image": "https://heyai.dev/assets/speakers/yusef.mohamadi.jpg",
+    "social": "https://x.com/yuseferi",
+    "talk_session_id": "session-004"
+  },
+  {
+    "id": "spk-007",
+    "name": "Adi Schacham-Shavit",
+    "company": "Enpal",
+    "bio": "Engineering leader at Enpal, one of Europe's largest clean energy scaleups, where he built the company's agentic AI strategy from scratch. Focused on reimagining the software delivery lifecycle for an AI-native engineering organization.",
+    "image": "https://heyai.dev/assets/speakers/adi-shacham-shavit.jpg",
+    "social": "https://www.linkedin.com/in/adi-shacham-shavit/",
+    "talk_session_id": "session-007"
+  },
+  {
+    "id": "spk-005",
+    "name": "Anthony Alaribe",
+    "company": "Monoscope",
+    "bio": "Founder of Monoscope, building tools that make software operations more autonomous and reliable.",
+    "image": "https://heyai.dev/assets/speakers/106ad4d0-7c0b-4960-829c-03ac0e3149d1.jpeg",
+    "social": "https://x.com/tonialaribe",
+    "talk_session_id": "session-005"
   }
 ]
