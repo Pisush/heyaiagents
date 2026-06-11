@@ -13,6 +13,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/pisush/heyaiagents/internal/board"
 	"github.com/pisush/heyaiagents/internal/config"
 	"github.com/pisush/heyaiagents/internal/content"
 	mcpserver "github.com/pisush/heyaiagents/internal/mcp"
@@ -44,24 +45,35 @@ func main() {
 	log.Printf("loaded %d sessions, %d speakers from seed", len(sessions), len(speakers))
 	kb := content.New(sessions, speakers)
 
-	mcpURL := "http://localhost:" + cfg.Port + "/mcp"
+	// Pixel Commons: the shared canvas (a JSON file, like the leaderboard).
+	pixels, err := board.Open(cfg.BoardPath)
+	if err != nil {
+		log.Fatalf("board store: %v", err)
+	}
+
+	mcpURL := os.Getenv("MCP_PUBLIC_URL")
+	if mcpURL == "" {
+		mcpURL = "http://localhost:" + cfg.Port + "/mcp"
+	}
 
 	mux := http.NewServeMux()
 
 	// Static assets (Tailwind output + htmx).
 	mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServer(http.Dir("web/static"))))
 
-	// MCP server (read-only).
+	// MCP server: read-only knowledgebase + Pixel Commons moves.
 	mcpHandler := mcpserver.NewHandler(mcpserver.Dependencies{
 		Content:     kb,
 		Leaderboard: leaderboard,
+		Board:       pixels,
+		Cfg:         cfg,
 		Secret:      cfg.ServerSecret,
 	})
 	mux.Handle("/mcp", mcpHandler)
 	mux.Handle("/mcp/", mcpHandler)
 
 	// Website.
-	site := web.NewHandler(kb, leaderboard, cfg, mcpURL)
+	site := web.NewHandler(kb, leaderboard, pixels, cfg, mcpURL)
 	site.Routes(mux)
 
 	srv := &http.Server{

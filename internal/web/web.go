@@ -6,6 +6,7 @@ package web
 import (
 	"net/http"
 
+	"github.com/pisush/heyaiagents/internal/board"
 	"github.com/pisush/heyaiagents/internal/config"
 	"github.com/pisush/heyaiagents/internal/content"
 	"github.com/pisush/heyaiagents/internal/store"
@@ -15,13 +16,14 @@ import (
 type Handler struct {
 	content     *content.Store
 	leaderboard *store.Leaderboard
+	board       *board.Board
 	cfg         config.Config
 	mcpURL      string
 }
 
 // NewHandler builds the website handler over the in-memory content store.
-func NewHandler(c *content.Store, lb *store.Leaderboard, cfg config.Config, mcpURL string) *Handler {
-	return &Handler{content: c, leaderboard: lb, cfg: cfg, mcpURL: mcpURL}
+func NewHandler(c *content.Store, lb *store.Leaderboard, pb *board.Board, cfg config.Config, mcpURL string) *Handler {
+	return &Handler{content: c, leaderboard: lb, board: pb, cfg: cfg, mcpURL: mcpURL}
 }
 
 // Routes registers the website routes onto mux.
@@ -29,6 +31,8 @@ func (h *Handler) Routes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /{$}", h.wall)
 	mux.HandleFunc("GET /connect", h.connect)
 	mux.HandleFunc("POST /claim", h.claim)
+	mux.HandleFunc("GET /board", h.boardPage)
+	mux.HandleFunc("GET /api/board", h.boardAPI)
 }
 
 func (h *Handler) wall(w http.ResponseWriter, r *http.Request) {

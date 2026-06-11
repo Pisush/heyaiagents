@@ -17,6 +17,8 @@ type Config struct {
 	Port string
 	// LeaderboardPath is the on-disk location of the leaderboard JSON file.
 	LeaderboardPath string
+	// BoardPath is the on-disk location of the Pixel Commons board JSON file.
+	BoardPath string
 	// EventStart and EventEnd bound the window in which a token's issued_at
 	// must fall to count toward the wall.
 	EventStart time.Time
@@ -31,6 +33,7 @@ func Load() (Config, error) {
 		ServerSecret:    os.Getenv("SERVER_SECRET"),
 		Port:            envOr("PORT", "8080"),
 		LeaderboardPath: envOr("LEADERBOARD_PATH", "./leaderboard.json"),
+		BoardPath:       envOr("BOARD_PATH", "./board.json"),
 	}
 
 	start, err := parseTime("EVENT_START", "2026-06-17T00:00:00Z")
