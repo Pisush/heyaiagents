@@ -4,6 +4,9 @@ import (
 	"encoding/json"
 	"net/http"
 	"strings"
+	"time"
+
+	"github.com/pisush/heyaiagents/internal/board"
 )
 
 // vendorGrant is the protected booth endpoint: a vendor (authenticated by its
@@ -63,6 +66,31 @@ func (h *Handler) vendorGrant(w http.ResponseWriter, r *http.Request) {
 		"granted":     amount,
 		"agent":       agent.Name,
 		"agent_ink":   ink,
+		"budget_left": v.Budget - h.board.VendorSpent(v.ID),
+	})
+}
+
+// vendorSpawnCore lets a vendor drop a sponsored data core on demand:
+//
+//	POST /vendor/spawn_core
+//	Authorization: Bearer <vendor key>
+//
+// Rate-limited per vendor; the bounty is debited from the vendor's budget.
+func (h *Handler) vendorSpawnCore(w http.ResponseWriter, r *http.Request) {
+	key := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
+	v, ok := h.vendors.ByKey(key)
+	if !ok || key == "" {
+		http.Error(w, `{"error":"invalid vendor key"}`, http.StatusUnauthorized)
+		return
+	}
+	core, err := h.board.SpawnVendorCore(v.ID, v.Name, board.CoreValue, v.Budget, 20*time.Minute)
+	if err != nil {
+		writeJSONError(w, http.StatusTooManyRequests, err.Error())
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(map[string]any{
+		"core":        core,
 		"budget_left": v.Budget - h.board.VendorSpent(v.ID),
 	})
 }

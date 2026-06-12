@@ -59,6 +59,19 @@ func main() {
 	}
 	log.Printf("loaded %d booth vendors", len(booths.All()))
 
+	// Neutral data cores spawn on a timer (CORE_INTERVAL, e.g. "25m"; "off" disables).
+	coreInterval := 25 * time.Minute
+	if v := os.Getenv("CORE_INTERVAL"); v != "" {
+		if v == "off" {
+			coreInterval = 0
+		} else if d, err := time.ParseDuration(v); err == nil {
+			coreInterval = d
+		} else {
+			log.Printf("warning: bad CORE_INTERVAL %q, using %s", v, coreInterval)
+		}
+	}
+	pixels.StartCoreSpawner(coreInterval)
+
 	mcpURL := os.Getenv("MCP_PUBLIC_URL")
 	if mcpURL == "" {
 		mcpURL = "http://localhost:" + cfg.Port + "/mcp"

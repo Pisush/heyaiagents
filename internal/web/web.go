@@ -36,6 +36,7 @@ func (h *Handler) Routes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /board", h.boardPage)
 	mux.HandleFunc("GET /api/board", h.boardAPI)
 	mux.HandleFunc("POST /vendor/grant", h.vendorGrant)
+	mux.HandleFunc("POST /vendor/spawn_core", h.vendorSpawnCore)
 }
 
 func (h *Handler) wall(w http.ResponseWriter, r *http.Request) {

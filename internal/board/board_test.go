@@ -4,6 +4,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 func newTestBoard(t *testing.T) *Board {
@@ -295,5 +296,64 @@ func TestSanitize(t *testing.T) {
 	}
 	if strings.ContainsAny(a.Name, "<>\n") {
 		t.Errorf("name not sanitized: %q", a.Name)
+	}
+}
+
+func TestCoreSpawnHarvestRace(t *testing.T) {
+	b := newTestBoard(t)
+	a1, _ := b.Register("marta", "claude-code", "", "", false)
+	a2, _ := b.Register("tom", "cursor", "", "", false)
+	x, y := seedEdge(t, b)
+	// Spawn a core two cells above the frontier; build a chain up to it.
+	core, err := b.SpawnCoreAt(x, y-3, "jetbrains", "JetBrains", 500)
+	if err != nil {
+		t.Fatalf("SpawnCoreAt: %v", err)
+	}
+	if len(b.Cores()) != 1 {
+		t.Fatalf("cores = %d, want 1", len(b.Cores()))
+	}
+	res, err := b.Place(a1.ID, [][]int{{x, y, 3}, {x, y - 1, 3}, {x, y - 2, 3}})
+	if err != nil {
+		t.Fatalf("Place: %v", err)
+	}
+	if len(res.Harvested) != 1 || res.Harvested[0].ID != core.ID {
+		t.Fatalf("harvested = %+v, want core %d", res.Harvested, core.ID)
+	}
+	got, _ := b.Agent(a1.ID)
+	if got.Ink != StarterInk-3+500 || got.CoresHarvested != 1 {
+		t.Errorf("agent after harvest = ink %d cores %d", got.Ink, got.CoresHarvested)
+	}
+	if len(b.Cores()) != 0 {
+		t.Errorf("core not removed after harvest")
+	}
+	// The second agent reaching the same spot gets nothing extra.
+	res2, err := b.Place(a2.ID, [][]int{{x + 1, y, 7}})
+	if err != nil {
+		t.Fatalf("Place a2: %v", err)
+	}
+	if len(res2.Harvested) != 0 {
+		t.Errorf("a2 harvested a removed core: %+v", res2.Harvested)
+	}
+}
+
+func TestVendorCoreBudgetAndRateLimit(t *testing.T) {
+	b := newTestBoard(t)
+	b.Register("marta", "claude-code", "", "", false)
+	if _, err := b.SpawnVendorCore("jb", "JetBrains", 500, 700, time.Minute); err != nil {
+		t.Fatalf("first vendor core: %v", err)
+	}
+	if got := b.VendorSpent("jb"); got != 500 {
+		t.Errorf("vendor spent = %d, want 500", got)
+	}
+	// Second is rate limited.
+	if _, err := b.SpawnVendorCore("jb", "JetBrains", 500, 10000, time.Minute); err == nil {
+		t.Fatal("expected rate limit error")
+	}
+	// And even unthrottled, the remaining 200 budget cannot cover another 500.
+	b.mu.Lock()
+	b.st.VendorCoreAt["jb"] = time.Time{}
+	b.mu.Unlock()
+	if _, err := b.SpawnVendorCore("jb", "JetBrains", 500, 700, time.Minute); err == nil {
+		t.Fatal("expected budget error")
 	}
 }

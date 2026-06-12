@@ -78,9 +78,10 @@ type Agent struct {
 	Stack        string          `json:"stack"`
 	Motto        string          `json:"motto,omitempty"`
 	Social       string          `json:"social,omitempty"`
-	Ink          int             `json:"ink"`
-	Px           int             `json:"px"`
-	Badges       []string        `json:"badges,omitempty"`
+	Ink            int      `json:"ink"`
+	Px             int      `json:"px"`
+	CoresHarvested int      `json:"cores_harvested"`
+	Badges         []string `json:"badges,omitempty"`
 	Redeemed     map[string]bool `json:"redeemed"`
 	Pairs        map[string]bool `json:"pairs"`
 	RegisteredAt time.Time       `json:"registered_at"`
@@ -107,6 +108,12 @@ type state struct {
 	UsedCodes   map[string]bool `json:"used_codes"`   // normalized voucher codes already redeemed
 	VendorSpent map[string]int  `json:"vendor_spent"` // vendor ID -> total ink granted
 	RedeemCount map[string]int  `json:"redeem_count"` // session ID -> redeems so far (early bird)
+
+	// Data cores.
+	Cores          []Core               `json:"cores"`
+	CoreSeq        int                  `json:"core_seq"`
+	TotalHarvested int                  `json:"total_harvested"`
+	VendorCoreAt   map[string]time.Time `json:"vendor_core_at"` // vendor ID -> last sponsored spawn
 }
 
 // Board is the live game state. All exported methods are safe for concurrent use.
@@ -146,14 +153,18 @@ func Open(path string) (*Board, error) {
 		if b.st.RedeemCount == nil {
 			b.st.RedeemCount = map[string]int{}
 		}
+		if b.st.VendorCoreAt == nil {
+			b.st.VendorCoreAt = map[string]time.Time{}
+		}
 	case os.IsNotExist(err):
 		b.st = state{
-			Colors:      make([]int16, Width*Height),
-			Owners:      make([]string, Width*Height),
-			Agents:      map[string]*Agent{},
-			UsedCodes:   map[string]bool{},
-			VendorSpent: map[string]int{},
-			RedeemCount: map[string]int{},
+			Colors:       make([]int16, Width*Height),
+			Owners:       make([]string, Width*Height),
+			Agents:       map[string]*Agent{},
+			UsedCodes:    map[string]bool{},
+			VendorSpent:  map[string]int{},
+			RedeemCount:  map[string]int{},
+			VendorCoreAt: map[string]time.Time{},
 		}
 		for i := range b.st.Colors {
 			b.st.Colors[i] = -1
@@ -337,6 +348,7 @@ type PlaceResult struct {
 	Placed    int      `json:"placed"`
 	InkLeft   int      `json:"ink_left"`
 	Neighbors []string `json:"neighbor_bonuses,omitempty"` // names of agents bonused with
+	Harvested []Core   `json:"cores_harvested,omitempty"`  // cores this batch reached first
 }
 
 // Place applies a batch of pixels for agent id. Each pixel is [x, y, color].
@@ -479,11 +491,18 @@ func (b *Board) Place(id string, pixels [][]int) (PlaceResult, error) {
 		}
 	}
 
-	b.event("place", fmt.Sprintf("%s placed %dpx", a.Name, len(batch)))
+	// Did this batch reach any data cores?
+	placed := make([][2]int, len(batch))
+	for i, c := range batch {
+		placed[i] = [2]int{c.x, c.y}
+	}
+	harvested := b.harvestCores(a, placed)
+
+	b.event("place", fmt.Sprintf("%s (%s) placed %dpx", a.Name, a.Stack, len(batch)))
 	if err := b.save(); err != nil {
 		return PlaceResult{}, err
 	}
-	return PlaceResult{Placed: len(batch), InkLeft: a.Ink, Neighbors: names}, nil
+	return PlaceResult{Placed: len(batch), InkLeft: a.Ink, Neighbors: names, Harvested: harvested}, nil
 }
 
 // RedeemResult reports what a redeem_token call credited.
@@ -546,18 +565,23 @@ type WallAgent struct {
 	Badges   []string `json:"badges,omitempty"`
 	Px       int      `json:"px"`
 	Ink      int      `json:"ink"`
+	Cores    int      `json:"cores_harvested"`
 	Sessions int      `json:"sessions_redeemed"`
 }
 
 // Snapshot is the public board state served to the big screen and get_wall.
 type Snapshot struct {
-	Width   int         `json:"width"`
-	Height  int         `json:"height"`
-	Palette []string    `json:"palette"`
-	Rows    []string    `json:"rows"`
-	Agents  []WallAgent `json:"agents"`
-	Events  []Event     `json:"events"`
-	TotalPx int         `json:"total_px"`
+	Width          int         `json:"width"`
+	Height         int         `json:"height"`
+	Palette        []string    `json:"palette"`
+	Rows           []string    `json:"rows"`
+	OwnerNames     []string    `json:"owner_names"`
+	OwnerRows      [][]int16   `json:"owner_rows"` // index into OwnerNames, -1 = empty/seed
+	Agents         []WallAgent `json:"agents"`
+	Events         []Event     `json:"events"`
+	Cores          []Core      `json:"cores"`
+	TotalPx        int         `json:"total_px"`
+	TotalHarvested int         `json:"total_harvested"`
 }
 
 // Snapshot returns the public state. Rows are rendered like Canvas (full board).
@@ -569,7 +593,8 @@ func (b *Board) Snapshot() Snapshot {
 	for _, a := range b.st.Agents {
 		agents = append(agents, WallAgent{
 			Name: a.Name, Stack: a.Stack, Motto: a.Motto, Social: a.Social,
-			Badges: a.Badges, Px: a.Px, Ink: a.Ink, Sessions: len(a.Redeemed),
+			Badges: a.Badges, Px: a.Px, Ink: a.Ink, Cores: a.CoresHarvested,
+			Sessions: len(a.Redeemed),
 		})
 	}
 	sort.Slice(agents, func(i, j int) bool { return agents[i].Px > agents[j].Px })
@@ -579,9 +604,43 @@ func (b *Board) Snapshot() Snapshot {
 	}
 	out := make([]Event, len(events))
 	copy(out, events)
+
+	// Owner attribution: a compact index grid aligned with Rows.
+	names := []string{}
+	indexOf := map[string]int16{}
+	ownerRows := make([][]int16, Height)
+	for y := 0; y < Height; y++ {
+		row := make([]int16, Width)
+		for x := 0; x < Width; x++ {
+			o := b.st.Owners[y*Width+x]
+			if o == "" || o == seedOwner {
+				row[x] = -1
+				continue
+			}
+			idx, ok := indexOf[o]
+			if !ok {
+				a := b.st.Agents[o]
+				label := "?"
+				if a != nil {
+					label = a.Name + " · " + a.Stack
+				}
+				idx = int16(len(names))
+				indexOf[o] = idx
+				names = append(names, label)
+			}
+			row[x] = idx
+		}
+		ownerRows[y] = row
+	}
+
+	cores := make([]Core, len(b.st.Cores))
+	copy(cores, b.st.Cores)
+
 	return Snapshot{
 		Width: Width, Height: Height, Palette: Palette,
-		Rows: rows, Agents: agents, Events: out, TotalPx: b.st.TotalPx,
+		Rows: rows, OwnerNames: names, OwnerRows: ownerRows,
+		Agents: agents, Events: out, Cores: cores,
+		TotalPx: b.st.TotalPx, TotalHarvested: b.st.TotalHarvested,
 	}
 }
 

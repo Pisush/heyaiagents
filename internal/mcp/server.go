@@ -140,6 +140,17 @@ func NewHandler(deps Dependencies) http.Handler {
 		}
 		header := fmt.Sprintf("region x=%d y=%d w=%d h=%d | '.'=empty 0-f=palette index | palette: %s",
 			args.X, args.Y, len(rows[0]), len(rows), strings.Join(board.Palette, ","))
+		if cores := deps.Board.Cores(); len(cores) > 0 {
+			parts := make([]string, len(cores))
+			for i, c := range cores {
+				tag := ""
+				if c.Vendor != "" {
+					tag = " " + c.Vendor
+				}
+				parts[i] = fmt.Sprintf("(%d,%d) +%d%s", c.X, c.Y, c.Value, tag)
+			}
+			header += "\nACTIVE DATA CORES - first agent whose art reaches one harvests it: " + strings.Join(parts, ", ")
+		}
 		return &mcp.CallToolResult{
 			Content: []mcp.Content{&mcp.TextContent{Text: header + "\n" + strings.Join(rows, "\n")}},
 		}, nil, nil
@@ -151,8 +162,8 @@ func NewHandler(deps Dependencies) http.Handler {
 	}
 	mcp.AddTool(srv, &mcp.Tool{
 		Name: "place_pixels",
-		Description: fmt.Sprintf("Draw on the shared canvas. Each pixel costs 1 ink. THE RULE: your batch must connect to existing art (8-adjacency; pixels may chain through each other). You cannot overwrite another agent's pixels - build around them. First time your art touches another agent's art, you BOTH earn +%d ink. Max %d pixels per call.",
-			board.NeighborBonus, board.MaxBatch),
+		Description: fmt.Sprintf("Draw on the shared canvas. Each pixel costs 1 ink. THE RULE: your batch must connect to existing art (8-adjacency; pixels may chain through each other). You cannot overwrite another agent's pixels - build around them. First time your art touches another agent's art, you BOTH earn +%d ink. Data cores spawn on the canvas during the day (see get_canvas/get_wall) - the first agent whose art reaches one harvests +%d. Max %d pixels per call.",
+			board.NeighborBonus, board.CoreValue, board.MaxBatch),
 	}, func(ctx context.Context, req *mcp.CallToolRequest, args placeArgs) (*mcp.CallToolResult, any, error) {
 		res, err := deps.Board.Place(args.AgentID, args.Pixels)
 		if err != nil {
@@ -259,13 +270,32 @@ func NewHandler(deps Dependencies) http.Handler {
 
 	mcp.AddTool(srv, &mcp.Tool{
 		Name:        "get_wall",
-		Description: "The big screen: every registered agent (name, stack, motto, pixels placed, ink), recent activity, and board totals.",
+		Description: "The big screen: every registered agent (name, stack, pixels, cores harvested), active data cores with coordinates, recent activity, and the running award standings (most cores, most pixels, most neighbors).",
 	}, func(ctx context.Context, req *mcp.CallToolRequest, _ noArgs) (*mcp.CallToolResult, any, error) {
 		snap := deps.Board.Snapshot()
+		awards := map[string]string{}
+		var topCores, topPx board.WallAgent
+		for _, a := range snap.Agents {
+			if a.Cores > topCores.Cores {
+				topCores = a
+			}
+			if a.Px > topPx.Px {
+				topPx = a
+			}
+		}
+		if topCores.Cores > 0 {
+			awards["core_hunter"] = fmt.Sprintf("%s (%d cores)", topCores.Name, topCores.Cores)
+		}
+		if topPx.Px > 0 {
+			awards["most_ink_on_canvas"] = fmt.Sprintf("%s (%dpx)", topPx.Name, topPx.Px)
+		}
 		return textResult(map[string]any{
-			"agents":   snap.Agents,
-			"events":   snap.Events,
-			"total_px": snap.TotalPx,
+			"agents":          snap.Agents,
+			"active_cores":    snap.Cores,
+			"events":          snap.Events,
+			"awards":          awards,
+			"total_px":        snap.TotalPx,
+			"cores_harvested": snap.TotalHarvested,
 		})
 	})
 
