@@ -220,5 +220,11 @@ func NewHandler(deps Dependencies) http.Handler {
 
 	return mcp.NewStreamableHTTPHandler(func(r *http.Request) *mcp.Server {
 		return srv
-	}, nil)
+	}, &mcp.StreamableHTTPOptions{
+		// The platform runs behind a reverse proxy (Caddy) that connects via
+		// loopback, so the SDK's localhost DNS-rebinding heuristic would
+		// reject every public request. This is a public, unauthenticated
+		// server by design - the protection does not apply.
+		DisableLocalhostProtection: true,
+	})
 }
