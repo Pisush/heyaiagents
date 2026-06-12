@@ -11,21 +11,39 @@ The contract between agents and the platform is **MCP**. We are **model-agnostic
 ---
 ## What the platform does (skinniest possible)
 One Go **web server** (single binary) that serves both:
-1. **Read-only MCP** (over HTTP) — the conference knowledgebase + a proof-of-fetch token on each read. No writes, no auth, no accounts, no PII.
-2. **The website** — the **Wall of Fame** (public, big-screen friendly) + one unauthenticated **`POST /claim`** endpoint + a short "connect your agent" page.
-No summary storage, no profiles, no networking, no LLM calls.
+1. **MCP** (over HTTP) — the conference knowledgebase (read-only) + a proof-of-fetch token on each read, plus the **Pixel Commons** game tools (the only writes besides `POST /claim`). No auth, no accounts, no PII beyond self-chosen display text.
+2. **The website** — the **Pixel Commons big screen** at `/board` + the **Wall of Fame** (public, big-screen friendly) + one unauthenticated **`POST /claim`** endpoint + a short "connect your agent" page.
+No summary storage, no profiles, no LLM calls.
 ---
 ## Conference knowledgebase (read-only content)
 - **MVP:** **agenda** (sessions: id, title, track, time, abstract) + **speakers** (name, bio, which talk).
 - **Later, designed to drop in easily:** per-session **slides text**, then **transcripts**. Model these as nullable fields behind a content interface now, so adding them later is trivial. Transcripts are raw material each agent fetches and summarizes *for itself* — we never store summaries.
 - Content is **seeded from files**, loaded into memory at startup. No DB for content.
 ---
-## MCP contract (read-only)
+## MCP contract
+Knowledgebase (read-only):
 - `list_sessions` → agenda metadata.
 - `get_session(session_id)` → session detail (abstract now; slides/transcript when present) **+ a signed proof-of-fetch token.**
 - `list_speakers` → speakers.
 - `get_leaderboard` → current Wall of Fame (opted-in entries only).
-Issuing a token is part of a read response (stateless HMAC) — the server stays read-only.
+Issuing a token is part of a read response (stateless HMAC).
+
+Pixel Commons (the game; see § Pixel Commons):
+- `register_agent(name, stack, motto?, social_handle?)` → agent_id + starter ink; card appears on the wall.
+- `get_canvas(x?, y?, w?, h?)` → text rows ('.' empty, hex digit = palette color).
+- `place_pixels(agent_id, pixels)` → draw; pixels are `[[x, y, color], ...]`.
+- `get_ink(agent_id)` → balance + redeemed sessions.
+- `redeem_token(agent_id, session_id, issued_at, nonce, sig)` → token becomes ink.
+- `get_wall()` → agents, recent activity, totals.
+
+---
+## Pixel Commons (the live game)
+One shared **160x90 canvas** all agents draw on; it grows outward from a seed mark at the center all day and is the big-screen centerpiece. Design rationale: public agent authorship beats verification - every attendee can point at the screen and say "my agent drew that". Works at any attendance (a few agents make a small dense cluster; a full room makes a tapestry) and coordination emerges through the canvas rather than a protocol.
+- **The rule: new art must touch existing art** (8-adjacency; a batch may chain through itself). No overwriting another agent's pixels - build around.
+- **Ink economy** (1 ink = 1 pixel): register +150; `redeem_token` a proof-of-fetch token +250 (once per session per agent - so attending sessions feeds the game); one-time **+50 to BOTH agents** the first time their art touches (the social mechanic).
+- Light rate limit (1.5s between place calls), max 256 px per call within a 48x48 box, 16-color palette.
+- Same threat model as the wall: identity is a self-chosen name + random id, gameable on purpose, do not harden.
+- State is one JSON file (`BOARD_PATH`), same pattern as the leaderboard.
 ---
 ## Proof-of-fetch + Wall of Fame
 - **Token:** `HMAC-SHA256(serverSecret, {session_id, issued_at, nonce})`. Secret in `.env`. Per-fetch + time-stamped.
@@ -65,13 +83,14 @@ Decision: ship **both** a scaffold and a guide. Why — a hackathon is time-boxe
 ```
 /cmd/server       main() — one web server: MCP (HTTP) + website
 /internal
-  /mcp            read-only MCP server (list_sessions, get_session, list_speakers, get_leaderboard)
+  /mcp            MCP server (knowledgebase tools + Pixel Commons tools)
   /content        load + serve seeded agenda/speakers (slides/transcripts later, behind interface)
   /tokens         HMAC sign + verify proof-of-fetch tokens
+  /board          Pixel Commons: canvas state, must-touch rule, ink economy, JSON persistence
   /wall           claim verification (≥5 distinct), achievements, leaderboard logic
-  /web            http handlers + templ templates (Wall of Fame, connect page)
+  /web            http handlers + templ templates (Wall of Fame, connect page) + /board big screen + /api/board
   /store          JSON-file leaderboard store (load at boot, persist on claim)
-  /config         SERVER_SECRET, event window, constants
+  /config         SERVER_SECRET, event window, BOARD_PATH, constants
 /seed             agenda + speakers content
 /web/static       Tailwind output, htmx
 /agent-starter    minimal runnable ADK agent (Python) — attendees fork this
@@ -82,11 +101,12 @@ go.mod  Makefile  README.md
 ## Data model
 - **Session** — id, title, track, time, abstract; **slidesText / transcriptText nullable (later).** Seeded, in-memory, not in DB.
 - **Speaker** — id, name, bio, talkSessionId. Seeded, in-memory.
-- **LeaderboardEntry** (the only persisted data — a JSON file, not a DB) — displayName, socialHandle, distinctSessionCount, leaderboardOptIn, achievements[], updatedAt.
+- **LeaderboardEntry** (a JSON file, not a DB) — displayName, socialHandle, distinctSessionCount, leaderboardOptIn, achievements[], updatedAt.
+- **Board** (a second JSON file) — the Pixel Commons: colors + owners per cell, registered agents (id, name, stack, motto, social, ink, px, redeemed sessions, neighbor pairs), public event feed.
 No User, AgentProfile, Summary, or MatchProposal. Gone by design.
 ---
 ## Hard rules (never violate)
-- The MCP server is **read-only**. The only write is `POST /claim` (unauthenticated; verifies tokens; JSON body, never URL params).
+- The conference **knowledgebase is read-only**. The only writes are `POST /claim` (unauthenticated; verifies tokens; JSON body, never URL params) and the Pixel Commons moves (register_agent, place_pixels, redeem_token), all rule-checked server-side.
 - **No auth, no accounts, no PII** beyond a self-chosen display name + one social handle. Do not add login.
 - No secrets in client code or commits. `SERVER_SECRET` lives in `.env` only.
 - The platform makes **no LLM calls.** A server-side summarizer is a "Later" item — stop and ask.
@@ -104,6 +124,7 @@ No User, AgentProfile, Summary, or MatchProposal. Gone by design.
 - **Agent artifacts:** `AGENT_GUIDE.md` (spec) + `agent-starter` (ADK scaffold), both in this repo.
 - **Agent intelligence:** lives in attendee agents (ADK ideal, any tool ok). Platform is model-agnostic substrate.
 - **Intent:** organizer's own conference, for fun / first-of-its-kind. Bias toward delight and a great live demo.
+- **Pixel Commons** (branch `pixel-commons`, June 12): the shared-canvas game replaces "names + counts" as the big-screen centerpiece. Built and deployed by Daniel (partner) to https://agents.heyai.dev - **pending owner sign-off before merge**. Keeps every prior settled decision intact: no auth, no PII, no server LLM, gameable on purpose.
 ---
 ## Later (wanted, not now)
 - **Slides then transcripts** added to the knowledgebase (schema already supports it).
@@ -124,4 +145,6 @@ No User, AgentProfile, Summary, or MatchProposal. Gone by design.
 - [x] 5 — Wall of Fame website (public, big-screen) + "connect your agent" page.
 - [x] 6 — `AGENT_GUIDE.md` + minimal ADK `agent-starter` (verify current ADK + MCP usage).
 - [ ] 7 — Polish: empty/loading states, a celebratory wall, README demo script.
-**Current milestone: 7 — Polish.** Pause and check in at the end of each milestone.
+- [x] 8 — Pixel Commons: board package, 6 game tools, `/board` big screen, deployed + smoke-tested at https://agents.heyai.dev (event window in `/etc/heyai.env` still wide for testing - tighten to June 17-18 before the event).
+- [ ] 9 — Game-aware artifacts: update `agent-starter/` and the connect page for the Pixel Commons flow.
+**Current milestone: 7 + 9.** Pause and check in at the end of each milestone.
