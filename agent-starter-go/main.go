@@ -27,7 +27,7 @@ import (
 )
 
 const (
-	width, height = 160, 90
+	width, height = 224, 126
 	stateFile     = "bot_state.json"
 	placeCooldown = 2 * time.Second
 )
@@ -47,9 +47,9 @@ type state struct {
 }
 
 type bot struct {
-	cs    *mcp.ClientSession
-	st    state
-	debug bool
+	cs     *mcp.ClientSession
+	st     state
+	gentle bool
 }
 
 func main() {
@@ -57,7 +57,9 @@ func main() {
 	motto := flag.String("motto", "no LLM, all speed", "motto on the wall")
 	regCode := flag.String("code", os.Getenv("REG_CODE"), "registration code from check-in (when required)")
 	loop := flag.Bool("loop", false, "keep playing: poll for cores and sessions")
-	every := flag.Duration("every", 45*time.Second, "loop interval")
+	every := flag.Duration("every", 60*time.Second, "loop interval (jittered)")
+	maxTurns := flag.Int("max-turns", 40, "stop loop mode after this many turns")
+	gentle := flag.Bool("gentle", true, "hackathon mode: pause before racing cores so humans have a chance")
 	flag.Parse()
 
 	url := os.Getenv("MCP_URL")
@@ -73,7 +75,7 @@ func main() {
 	}
 	defer cs.Close()
 
-	b := &bot{cs: cs}
+	b := &bot{cs: cs, gentle: *gentle}
 	b.loadState()
 
 	if b.st.AgentID == "" {
@@ -101,15 +103,21 @@ func main() {
 		log.Printf("one turn done - run with -loop to keep playing")
 		return
 	}
-	log.Printf("loop mode: every %s", *every)
-	for range time.Tick(*every) {
+	log.Printf("loop mode: ~every %s (jittered), max %d turns", *every, *maxTurns)
+	for i := 0; i < *maxTurns; i++ {
+		time.Sleep(time.Duration(float64(*every) * (0.8 + 0.5*rand.Float64())))
 		b.turn(ctx)
 	}
+	log.Printf("reached -max-turns %d - rerun to continue", *maxTurns)
 }
 
 // turn is one round of play: race cores, redeem sessions, otherwise draw.
 func (b *bot) turn(ctx context.Context) {
 	if core, ok := b.activeCore(ctx); ok {
+		if b.gentle {
+			log.Printf("core at (%d,%d) - gentle mode: giving the room a 15s head start", core.X, core.Y)
+			time.Sleep(15 * time.Second)
+		}
 		log.Printf("core at (%d,%d) worth %d - racing", core.X, core.Y, core.Value)
 		b.raceCore(ctx, core)
 		return
@@ -122,16 +130,25 @@ func (b *bot) turn(ctx context.Context) {
 
 type core struct {
 	X, Y, Value int
+	ID          int    `json:"id"`
+	Question    string `json:"question"`
 }
 
 func (b *bot) activeCore(ctx context.Context) (core, bool) {
 	var wall struct {
 		Cores []core `json:"active_cores"`
 	}
-	if err := b.call(ctx, "get_wall", nil, &wall); err != nil || len(wall.Cores) == 0 {
+	if err := b.call(ctx, "get_wall", nil, &wall); err != nil {
 		return core{}, false
 	}
-	return wall.Cores[0], true
+	for _, c := range wall.Cores {
+		// Sealed cores need a solved riddle - that is what LLM agents are
+		// for. This bot only races the speed cores.
+		if c.Question == "" {
+			return c, true
+		}
+	}
+	return core{}, false
 }
 
 // raceCore draws a 1px diagonal-then-straight line from the inked cell
@@ -184,7 +201,11 @@ func (b *bot) raceCore(ctx context.Context, c core) {
 			log.Printf("HARVESTED core at (%d,%d): +%d, ink now %d", c.X, c.Y, res.Harvested[0].Value, res.InkLeft)
 			return
 		}
-		time.Sleep(placeCooldown)
+		cooldown := placeCooldown
+		if b.gentle {
+			cooldown = 5 * time.Second
+		}
+		time.Sleep(cooldown)
 	}
 }
 

@@ -22,10 +22,11 @@ import (
 	"time"
 )
 
-// Canvas geometry and game constants.
+// Canvas geometry and game constants. Sized for a full conference of agents:
+// at 160x90 the projected ink supply could fill the canvas by mid-day.
 const (
-	Width  = 160
-	Height = 90
+	Width  = 224
+	Height = 126
 
 	StarterInk    = 150 // granted on register_agent
 	SessionInk    = 250 // granted per redeemed proof-of-fetch token
@@ -708,6 +709,11 @@ func (b *Board) Snapshot() Snapshot {
 
 	cores := make([]Core, len(b.st.Cores))
 	copy(cores, b.st.Cores)
+	for i := range cores {
+		// Agent IDs are the players' only credential - never expose who
+		// unlocked what on the public snapshot.
+		cores[i].UnlockedBy = nil
+	}
 
 	return Snapshot{
 		Width: Width, Height: Height, Palette: Palette,

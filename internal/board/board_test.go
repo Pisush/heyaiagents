@@ -305,7 +305,7 @@ func TestCoreSpawnHarvestRace(t *testing.T) {
 	a2, _ := b.Register("tom", "cursor", "", "", false, "")
 	x, y := seedEdge(t, b)
 	// Spawn a core two cells above the frontier; build a chain up to it.
-	core, err := b.SpawnCoreAt(x, y-3, "jetbrains", "JetBrains", 500)
+	core, err := b.SpawnCoreAt(x, y-3, "jetbrains", "JetBrains", 500, "", "")
 	if err != nil {
 		t.Fatalf("SpawnCoreAt: %v", err)
 	}
@@ -389,5 +389,38 @@ func TestRemoveAgentClearsAndBans(t *testing.T) {
 	// The burned reg code cannot be reused for a fresh identity.
 	if _, err := b.Register("griefer2", "curl", "", "", false, "HEYBAD001"); err == nil {
 		t.Fatal("expected burned-code error")
+	}
+}
+
+func TestSealedCoreRequiresUnlock(t *testing.T) {
+	b := newTestBoard(t)
+	a1, _ := b.Register("solver", "adk", "", "", false, "")
+	a2, _ := b.Register("rusher", "go", "", "", false, "")
+	x, y := seedEdge(t, b)
+	core, err := b.SpawnCoreAt(x, y-3, "", "", 500, "ch-001", "what am I?")
+	if err != nil {
+		t.Fatalf("SpawnCoreAt: %v", err)
+	}
+	// The rusher reaches the footprint without solving: nothing happens.
+	res, err := b.Place(a2.ID, [][]int{{x, y, 1}, {x, y - 1, 1}, {x, y - 2, 1}})
+	if err != nil {
+		t.Fatalf("Place rusher: %v", err)
+	}
+	if len(res.Harvested) != 0 {
+		t.Fatalf("sealed core harvested without unlock: %+v", res.Harvested)
+	}
+	if len(b.Cores()) != 1 {
+		t.Fatal("core should still be active")
+	}
+	// The solver unlocks, then reaches it (chaining off the rusher's path).
+	if _, err := b.UnlockCore(core.ID, a1.ID); err != nil {
+		t.Fatalf("UnlockCore: %v", err)
+	}
+	res2, err := b.Place(a1.ID, [][]int{{x + 1, y - 2, 3}, {x + 1, y - 3, 3}})
+	if err != nil {
+		t.Fatalf("Place solver: %v", err)
+	}
+	if len(res2.Harvested) != 1 {
+		t.Fatalf("unlocked solver should harvest: %+v", res2)
 	}
 }

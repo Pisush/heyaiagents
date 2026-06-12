@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/pisush/heyaiagents/internal/board"
+	"github.com/pisush/heyaiagents/internal/challenges"
 	"github.com/pisush/heyaiagents/internal/config"
 	"github.com/pisush/heyaiagents/internal/content"
 	mcpserver "github.com/pisush/heyaiagents/internal/mcp"
@@ -70,7 +71,15 @@ func main() {
 		log.Printf("registration codes REQUIRED (%d in pool)", len(regCodes))
 	}
 
-	// Neutral data cores spawn on a timer (CORE_INTERVAL, e.g. "25m"; "off" disables).
+	// Sealed-core challenge bank (optional file; empty bank = speed cores only).
+	bank, err := challenges.Load(cfg.ChallengesPath)
+	if err != nil {
+		log.Fatalf("challenges: %v", err)
+	}
+	log.Printf("loaded %d sealed-core challenges", bank.Size())
+
+	// Neutral data cores spawn on a timer (CORE_INTERVAL, e.g. "25m"; "off"
+	// disables), alternating sealed (challenge-gated) and plain speed cores.
 	coreInterval := 25 * time.Minute
 	if v := os.Getenv("CORE_INTERVAL"); v != "" {
 		if v == "off" {
@@ -81,7 +90,26 @@ func main() {
 			log.Printf("warning: bad CORE_INTERVAL %q, using %s", v, coreInterval)
 		}
 	}
-	pixels.StartCoreSpawner(coreInterval)
+	if coreInterval > 0 {
+		go func() {
+			sealed := false
+			for range time.Tick(coreInterval) {
+				if !pixels.ShouldAutoSpawn() {
+					continue
+				}
+				chID, q := "", ""
+				if sealed {
+					if c := bank.Random(); c != nil {
+						chID, q = c.ID, c.Q
+					}
+				}
+				sealed = !sealed
+				if _, err := pixels.SpawnCore("", "", board.CoreValue, chID, q); err != nil {
+					log.Printf("core spawn: %v", err)
+				}
+			}
+		}()
+	}
 
 	mcpURL := os.Getenv("MCP_PUBLIC_URL")
 	if mcpURL == "" {
@@ -100,6 +128,7 @@ func main() {
 		Board:       pixels,
 		Vendors:     booths,
 		RegCodes:    regCodes,
+		Challenges:  bank,
 		Cfg:         cfg,
 		Secret:      cfg.ServerSecret,
 	})

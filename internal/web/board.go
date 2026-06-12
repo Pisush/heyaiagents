@@ -175,7 +175,8 @@ function fxLoop(){
       fxc.fillRect(c.x*scale, c.y*scale, scale, scale);
       fxc.globalAlpha = 0.9;
       fxc.font = '700 11px "IBM Plex Mono", monospace';
-      fxc.fillText(((c.vendor||'')+' CORE +'+c.value).trim(), (c.x-3)*scale, (c.y-2)*scale-6);
+      const label = ((c.question?'SEALED ':'')+(c.vendor||'')+' CORE +'+c.value).trim();
+      fxc.fillText(label, (c.x-3)*scale, (c.y-2)*scale-6);
       fxc.globalAlpha = 1;
     }
   }
@@ -207,7 +208,9 @@ async function tick(){
       ? snap.cores.map(c=>{
           const dir = (c.y < snap.height/2 ? 'N' : 'S') + (c.x < snap.width/2 ? 'W' : 'E');
           const cls = c.vendor ? 'core-vendor' : 'core-neutral';
-          return '<div class="core-row"><span class="'+cls+'">&#9673; '+esc(c.vendor||'data')+' core</span> <span style="color:var(--dim)">sector '+dir+'</span><span class="val">+'+c.value+'</span></div>';
+          const lock = c.question ? '<i class="ph-fill ph-lock icon"></i> ' : '';
+          const q = c.question ? '<div style="color:var(--dim);font-size:10.5px;white-space:normal;line-height:1.4">&ldquo;'+esc(c.question)+'&rdquo;</div>' : '';
+          return '<div class="core-row"><span class="'+cls+'">'+lock+'&#9673; '+esc(c.vendor||'data')+' core</span> <span style="color:var(--dim)">sector '+dir+'</span><span class="val">+'+c.value+'</span>'+q+'</div>';
         }).join('')
       : '<div class="empty">none online - '+snap.total_harvested+' harvested so far</div>';
 

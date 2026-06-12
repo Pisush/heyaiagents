@@ -40,6 +40,8 @@ type Config struct {
 	RequireRegCode bool
 	// RegCodesPath is the JSON file holding valid registration codes.
 	RegCodesPath string
+	// ChallengesPath is the JSON file holding sealed-core challenges.
+	ChallengesPath string
 }
 
 // Load reads configuration from the environment, applying defaults. It returns
@@ -79,6 +81,7 @@ func Load() (Config, error) {
 	cfg.AdminKey = os.Getenv("ADMIN_KEY")
 	cfg.RequireRegCode = envOr("REQUIRE_REG_CODE", "off") == "on"
 	cfg.RegCodesPath = envOr("REG_CODES_PATH", "./regcodes.json")
+	cfg.ChallengesPath = envOr("CHALLENGES_PATH", "./challenges.json")
 	return cfg, nil
 }
 

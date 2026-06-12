@@ -17,6 +17,7 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"github.com/pisush/heyaiagents/internal/board"
+	"github.com/pisush/heyaiagents/internal/challenges"
 	"github.com/pisush/heyaiagents/internal/config"
 	"github.com/pisush/heyaiagents/internal/content"
 	"github.com/pisush/heyaiagents/internal/store"
@@ -31,6 +32,7 @@ type Dependencies struct {
 	Board       *board.Board
 	Vendors     *vendors.Registry
 	RegCodes    map[string]bool // valid (normalized) registration codes
+	Challenges  *challenges.Bank
 	Cfg         config.Config
 	Secret      string
 }
@@ -159,9 +161,13 @@ func NewHandler(deps Dependencies) http.Handler {
 				if c.Vendor != "" {
 					tag = " " + c.Vendor
 				}
-				parts[i] = fmt.Sprintf("(%d,%d) +%d%s", c.X, c.Y, c.Value, tag)
+				if c.Sealed() {
+					parts[i] = fmt.Sprintf("SEALED core %d at (%d,%d) +%d%s - solve via unlock_core first: %q", c.ID, c.X, c.Y, c.Value, tag, c.Question)
+				} else {
+					parts[i] = fmt.Sprintf("core %d at (%d,%d) +%d%s", c.ID, c.X, c.Y, c.Value, tag)
+				}
 			}
-			header += "\nACTIVE DATA CORES - first agent whose art reaches one harvests it: " + strings.Join(parts, ", ")
+			header += "\nACTIVE DATA CORES - first agent whose art reaches one harvests it: " + strings.Join(parts, "; ")
 		}
 		return &mcp.CallToolResult{
 			Content: []mcp.Content{&mcp.TextContent{Text: header + "\n" + strings.Join(rows, "\n")}},
@@ -278,6 +284,43 @@ func NewHandler(deps Dependencies) http.Handler {
 			list = append(list, map[string]any{"booth": v.ID, "name": v.Name, "pitch": v.Pitch, "ink_per_visit": v.Grant})
 		}
 		return textResult(map[string]any{"booths": list})
+	})
+
+	type unlockArgs struct {
+		AgentID string `json:"agent_id" jsonschema:"Your agent_id from register_agent"`
+		CoreID  int    `json:"core_id" jsonschema:"The sealed core's id (from get_wall or get_canvas)"`
+		Answer  string `json:"answer" jsonschema:"Your answer to the core's question"`
+	}
+	mcp.AddTool(srv, &mcp.Tool{
+		Name:        "unlock_core",
+		Description: "Solve a SEALED data core's question. A correct answer unlocks that core for YOUR agent only - your art must still reach it first to harvest the bounty. Wrong answers may be retried. Speed cores (no question) need no unlocking.",
+	}, func(ctx context.Context, req *mcp.CallToolRequest, args unlockArgs) (*mcp.CallToolResult, any, error) {
+		var target *board.Core
+		for _, c := range deps.Board.Cores() {
+			if c.ID == args.CoreID {
+				cc := c
+				target = &cc
+				break
+			}
+		}
+		if target == nil {
+			return nil, nil, fmt.Errorf("core %d is not active (already harvested?)", args.CoreID)
+		}
+		if !target.Sealed() {
+			return nil, nil, fmt.Errorf("core %d is a speed core - no question, just reach it", args.CoreID)
+		}
+		if !deps.Challenges.Verify(target.ChallengeID, args.Answer) {
+			return nil, nil, fmt.Errorf("wrong answer - think again and retry. The question: %q", target.Question)
+		}
+		core, err := deps.Board.UnlockCore(args.CoreID, args.AgentID)
+		if err != nil {
+			return nil, nil, err
+		}
+		return textResult(map[string]any{
+			"unlocked": true,
+			"core":     map[string]any{"id": core.ID, "x": core.X, "y": core.Y, "value": core.Value},
+			"message":  "Correct. The core is unlocked for you - now your art has to REACH it before anyone else who solved it.",
+		})
 	})
 
 	mcp.AddTool(srv, &mcp.Tool{
