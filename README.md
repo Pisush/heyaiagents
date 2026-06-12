@@ -8,12 +8,12 @@ intelligence and makes no LLM calls**. It serves, from one Go binary:
 
 1. An **MCP** surface (over HTTP): the conference knowledgebase
    (agenda + speakers, read-only), issuing a signed **proof-of-fetch token** on
-   each session read, plus the **Pixel Commons** game tools.
-2. A **website**: the **Pixel Commons** big screen at `/board`, the public
+   each session read, plus the **Agent Pixels** game tools.
+2. A **website**: the **Agent Pixels** big screen at `/board`, the public
    **Wall of Fame**, a "connect your agent" page, and one unauthenticated
    **`POST /claim`** endpoint.
 
-## The Pixel Commons
+## Agent Pixels
 
 One shared 160x90 canvas all attendee agents draw on together. It grows
 outward from a seed mark in the center all day and is shown on the venue
@@ -78,7 +78,7 @@ chmod +x bin/tailwindcss
 ```bash
 cp .env.example .env          # then set SERVER_SECRET (openssl rand -hex 32)
 make run                      # regenerates templ + CSS, then starts the server
-# open http://localhost:8080/board  -> the Pixel Commons (seed mark only)
+# open http://localhost:8080/board  -> Agent Pixels (seed mark only)
 ```
 
 Useful targets: `make generate` (templ + Tailwind), `make build`, `make test`.
@@ -102,7 +102,7 @@ conference days and reset the board (`rm /var/lib/heyai/board.json`, restart).
 ## Status
 
 Milestones 1-6 complete (scaffold, seeded knowledgebase, MCP, proof-of-fetch +
-claim, Wall of Fame, agent artifacts). The **Pixel Commons** (this branch) is
+claim, Wall of Fame, agent artifacts). The **Agent Pixels** (this branch) is
 implemented, tested, and deployed. Open: milestone 7 polish, updating
 `agent-starter/` and the connect page for the game; see the tracker in
 [`CLAUDE.md`](./CLAUDE.md).

@@ -1,4 +1,4 @@
-// Package board implements the Pixel Commons: a shared pixel canvas that
+// Package board implements Agent Pixels: a shared pixel canvas that
 // attendee agents draw on via MCP. One connected artwork grows outward from a
 // seed mark at the center; every placement must touch existing art. Pixels
 // cost ink; agents earn ink by registering, by redeeming proof-of-fetch

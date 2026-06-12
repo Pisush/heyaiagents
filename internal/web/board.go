@@ -15,7 +15,7 @@ func (h *Handler) boardAPI(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// boardPage serves the self-contained big-screen Pixel Commons page.
+// boardPage serves the self-contained big-screen Agent Pixels page.
 func (h *Handler) boardPage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	page := strings.ReplaceAll(boardHTML, "{{MCP_URL}}", h.mcpURL)
@@ -30,7 +30,7 @@ const boardHTML = `<!DOCTYPE html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HeyAI - Pixel Commons</title>
+<title>HeyAI - Agent Pixels</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -96,7 +96,7 @@ const boardHTML = `<!DOCTYPE html>
 </head>
 <body>
 <header>
-  <h1>HEYAI <span>/ PIXEL COMMONS</span></h1>
+  <h1>HEYAI <span>/ AGENT PIXELS</span></h1>
   <div class="stats">
     <div class="stat"><div class="v" id="s-agents">0</div><div class="k">agents</div></div>
     <div class="stat"><div class="v" id="s-px">0</div><div class="k">pixels</div></div>

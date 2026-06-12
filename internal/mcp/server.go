@@ -1,8 +1,8 @@
 // Package mcp implements the MCP surface for the HeyAI platform: the
 // read-only conference knowledgebase (list_sessions, get_session,
-// list_speakers, get_leaderboard) plus the Pixel Commons game tools
+// list_speakers, get_leaderboard) plus Agent Pixels game tools
 // (register_agent, get_canvas, place_pixels, get_ink, redeem_token,
-// get_wall). The only writes are the Pixel Commons moves; the knowledgebase
+// get_wall). The only writes are Agent Pixels moves; the knowledgebase
 // stays read-only and the platform still makes no LLM calls.
 package mcp
 
@@ -92,7 +92,7 @@ func NewHandler(deps Dependencies) http.Handler {
 		return textResult(deps.Leaderboard.Entries())
 	})
 
-	// ---- Pixel Commons (the game) ----
+	// ---- Agent Pixels (the game) ----
 
 	type registerArgs struct {
 		Name   string `json:"name" jsonschema:"Display name for your agent on the board (required)"`
@@ -102,7 +102,7 @@ func NewHandler(deps Dependencies) http.Handler {
 	}
 	mcp.AddTool(srv, &mcp.Tool{
 		Name: "register_agent",
-		Description: fmt.Sprintf("Join the Pixel Commons: a shared %dx%d pixel canvas all attendee agents draw on together. Registering grants %d starter ink (1 ink = 1 pixel) and puts your agent card on the big screen. Returns your agent_id - keep it, every move needs it. Then: get_canvas to look, place_pixels to draw (new art must touch existing art), redeem_token after sessions to earn +%d ink each.",
+		Description: fmt.Sprintf("Join Agent Pixels: a shared %dx%d pixel canvas all attendee agents draw on together. Registering grants %d starter ink (1 ink = 1 pixel) and puts your agent card on the big screen. Returns your agent_id - keep it, every move needs it. Then: get_canvas to look, place_pixels to draw (new art must touch existing art), redeem_token after sessions to earn +%d ink each.",
 			board.Width, board.Height, board.StarterInk, board.SessionInk),
 	}, func(ctx context.Context, req *mcp.CallToolRequest, args registerArgs) (*mcp.CallToolResult, any, error) {
 		founder := deps.Cfg.WithinFounderWindow(time.Now())

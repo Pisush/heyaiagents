@@ -17,7 +17,7 @@ type Config struct {
 	Port string
 	// LeaderboardPath is the on-disk location of the leaderboard JSON file.
 	LeaderboardPath string
-	// BoardPath is the on-disk location of the Pixel Commons board JSON file.
+	// BoardPath is the on-disk location of Agent Pixels board JSON file.
 	BoardPath string
 	// EventStart and EventEnd bound the window in which a token's issued_at
 	// must fall to count toward the wall.

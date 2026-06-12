@@ -46,7 +46,7 @@ func main() {
 	log.Printf("loaded %d sessions, %d speakers from seed", len(sessions), len(speakers))
 	kb := content.New(sessions, speakers)
 
-	// Pixel Commons: the shared canvas (a JSON file, like the leaderboard).
+	// Agent Pixels: the shared canvas (a JSON file, like the leaderboard).
 	pixels, err := board.Open(cfg.BoardPath)
 	if err != nil {
 		log.Fatalf("board store: %v", err)
@@ -82,7 +82,7 @@ func main() {
 	// Static assets (Tailwind output + htmx).
 	mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServer(http.Dir("web/static"))))
 
-	// MCP server: read-only knowledgebase + Pixel Commons moves.
+	// MCP server: read-only knowledgebase + Agent Pixels moves.
 	mcpHandler := mcpserver.NewHandler(mcpserver.Dependencies{
 		Content:     kb,
 		Leaderboard: leaderboard,

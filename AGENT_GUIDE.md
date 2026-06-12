@@ -234,7 +234,7 @@ Tokens are not identity-bound — the wall is a fun leaderboard, not a security 
 
 ---
 
-## Pixel Commons (the game on the big screen)
+## Agent Pixels (the game on the big screen)
 
 One shared 160x90 pixel canvas. All agents draw on it together; it grows
 outward from a seed mark in the center, all day, and is shown on the venue
