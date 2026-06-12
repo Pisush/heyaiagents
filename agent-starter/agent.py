@@ -1,17 +1,21 @@
 """
-HeyAI Agent Starter — Google ADK + MCP
-Minimal runnable agent. Clone, set MCP_URL, run, then customize.
+HeyAI Agent Pixels starter - Google ADK + MCP.
 
-Prerequisites:
-  pip install google-adk
-  export GOOGLE_API_KEY=...  (or set in .env)
-  export MCP_URL=http://<platform-host>/mcp  (default: http://localhost:8080/mcp)
+Your agent joins the shared pixel canvas, draws, earns ink, and races data
+cores. Clone, set two env vars, run, then make it yours.
 
-Usage:
-  python agent.py
+Setup:
+  pip install -r requirements.txt
+  export GOOGLE_API_KEY=...                       # aistudio.google.com
+  export MCP_URL=https://agents.heyai.dev/mcp     # the conference platform
+  export AGENT_NAME=my-agent                      # how you appear on the big screen
 
-Verified against google-adk 2.x. If the ADK API has changed, see comments
-marked  # verify with current ADK docs
+Run:
+  python agent.py            one turn: register, look, draw, redeem
+  python agent.py --loop     keep playing: races cores, redeems sessions,
+                             extends your art - leave it running all day
+
+Verified against google-adk 2.2.0.
 """
 
 import asyncio
@@ -20,149 +24,163 @@ import os
 import sys
 from pathlib import Path
 
-# verify with current ADK docs — import paths for 2.x
-from google.adk.agents import LlmAgent  # verify with current ADK docs
-from google.adk.runners import InMemoryRunner  # verify with current ADK docs
-from google.adk.tools.mcp_tool.mcp_toolset import McpToolset  # verify with current ADK docs
-from google.adk.tools.mcp_tool.mcp_session_manager import (  # verify with current ADK docs
-    StreamableHTTPConnectionParams,
-)
-from google.genai import types  # verify with current ADK docs
+from google.adk.agents import LlmAgent
+from google.adk.runners import InMemoryRunner
+from google.adk.tools.mcp_tool.mcp_toolset import McpToolset
+from google.adk.tools.mcp_tool.mcp_session_manager import StreamableHTTPConnectionParams
+from google.genai import types
 
-MCP_URL = os.environ.get("MCP_URL", "http://localhost:8080/mcp")
-TOKENS_FILE = Path("tokens.json")
+MCP_URL = os.environ.get("MCP_URL", "https://agents.heyai.dev/mcp")
+AGENT_NAME = os.environ.get("AGENT_NAME", "starter-agent")
+AGENT_MOTTO = os.environ.get("AGENT_MOTTO", "fresh out of the hackathon")
+MODEL = os.environ.get("MODEL", "gemini-2.5-flash")
+STATE_FILE = Path("agent_state.json")
+LOOP_SECONDS = int(os.environ.get("LOOP_SECONDS", "90"))
 
 # ---------------------------------------------------------------------------
-# Agent definition
+# The game brief. This is your agent's brain - most hackathon points are won
+# by editing this string.
 # ---------------------------------------------------------------------------
 
-# TODO: customize — swap out the model, change the instruction, add tools
-AGENT_INSTRUCTION = """
-You are a conference assistant for HeyAI.
+INSTRUCTION = f"""
+You are "{AGENT_NAME}", an autonomous agent playing Agent Pixels at the HeyAI
+conference: a shared 160x90 pixel canvas all attendee agents draw on together.
 
-When asked to fetch an agenda:
-1. Call list_sessions to get all sessions.
-2. For each session the user wants to explore, call get_session with its id.
-3. Print a short summary: title, speaker(s), key takeaway from the abstract.
-4. Return the proof_of_fetch_token from each get_session response exactly as-is —
-   include it in your final answer as JSON so it can be saved.
+THE RULES (the server enforces them - read errors carefully):
+- Pixels cost 1 ink each. Earn ink: register (+150), redeem_token after a
+  session has started (+250, first 5 get +50), visit_booth codes (+200),
+  first touch with another agent's art (+50 for both).
+- place_pixels batches MUST connect to existing art (8-adjacency; pixels in
+  one batch may chain through each other). NEVER overwrite another agent's
+  pixels - place only on cells shown as '.' in get_canvas.
+- Max 256 pixels per call, within a 48x48 box. Wait ~2s between place calls.
+- DATA CORES: glowing targets worth +500 to the FIRST agent whose art reaches
+  their 3x3 footprint. get_wall and get_canvas show active core coordinates.
 
-Be concise. Summaries should be 2-4 sentences max.
+HOW TO DRAW WELL:
+1. get_canvas around where you want to build (e.g. x=60 y=30 w=60 h=35).
+2. Sketch your art as ASCII rows first, then convert to [[x,y,color],...].
+3. Double-check EVERY target cell is '.' in the canvas text you just fetched.
+4. Coordinates: x grows right, y grows down, (0,0) is top-left.
+5. If a placement fails, re-fetch the canvas and fix your plan - do not retry
+   the same pixels blindly.
+
+STRATEGY, in priority order:
+1. If a data core is active, RACE IT: draw a 1px-wide connected path from the
+   nearest existing art toward the core footprint. Speed beats beauty.
+2. Redeem tokens for any session that has started (list_sessions for times,
+   get_session for the token, redeem_token to cash it).
+3. Otherwise, extend your artwork or start a new piece touching other agents'
+   art you have not touched yet (each new neighbor pays +50 to you both).
+
+Always end your reply with one line: STATUS: <ink> ink, <what you did>.
 """
 
+# ---------------------------------------------------------------------------
+# Plumbing
+# ---------------------------------------------------------------------------
 
-def build_agent(toolset: McpToolset) -> LlmAgent:
-    # verify with current ADK docs — LlmAgent constructor may change
-    return LlmAgent(
-        name="heyai-agent",
-        model="gemini-2.0-flash",  # TODO: customize — change model if preferred
-        instruction=AGENT_INSTRUCTION,
-        tools=[toolset],  # verify with current ADK docs — may be toolsets=
+
+def load_state() -> dict:
+    if STATE_FILE.exists():
+        return json.loads(STATE_FILE.read_text())
+    return {}
+
+
+def save_state(state: dict) -> None:
+    STATE_FILE.write_text(json.dumps(state, indent=2))
+
+
+def build_runner() -> InMemoryRunner:
+    toolset = McpToolset(
+        connection_params=StreamableHTTPConnectionParams(url=MCP_URL),
+    )
+    agent = LlmAgent(
+        name="heyai_pixels_agent",
+        model=MODEL,
+        instruction=INSTRUCTION,
+        tools=[toolset],
+    )
+    return InMemoryRunner(agent=agent)
+
+
+async def take_turn(runner: InMemoryRunner, session_id: str, prompt: str) -> str:
+    message = types.Content(role="user", parts=[types.Part(text=prompt)])
+    final_text = ""
+    async for event in runner.run_async(
+        user_id="attendee", session_id=session_id, new_message=message
+    ):
+        if getattr(event, "content", None):
+            for part in event.content.parts:
+                if getattr(part, "text", None):
+                    print(part.text, end="", flush=True)
+                    final_text += part.text
+    print()
+    return final_text
+
+
+def first_turn_prompt(state: dict) -> str:
+    if state.get("agent_id"):
+        return (
+            f"You are already registered: your agent_id is {state['agent_id']}. "
+            "Check get_ink, then take one turn following your strategy."
+        )
+    return (
+        f'Register yourself with register_agent: name "{AGENT_NAME}", '
+        f'stack "adk", motto "{AGENT_MOTTO}". '
+        "Remember the agent_id from the response and state it clearly as "
+        "AGENT_ID: <id> on its own line. Then take your first turn: look at "
+        "the canvas and place a small signature artwork (8-15 pixels) on the "
+        "frontier of the existing art."
     )
 
 
-# ---------------------------------------------------------------------------
-# Token banking
-# ---------------------------------------------------------------------------
+def extract_agent_id(text: str) -> str | None:
+    for line in text.splitlines():
+        if "AGENT_ID:" in line:
+            candidate = line.split("AGENT_ID:")[-1].strip().strip("`* ")
+            if len(candidate) == 8:
+                return candidate
+    return None
 
-def load_tokens() -> list[dict]:
-    if TOKENS_FILE.exists():
-        return json.loads(TOKENS_FILE.read_text())
-    return []
-
-
-def save_tokens(tokens: list[dict]) -> None:
-    TOKENS_FILE.write_text(json.dumps(tokens, indent=2))
-    print(f"[agent] Saved {len(tokens)} token(s) to {TOKENS_FILE}")
-
-
-def extract_tokens_from_text(text: str) -> list[dict]:
-    """
-    Pull any proof_of_fetch_token objects out of the agent's text response.
-    This is a simple heuristic — customize if your agent structures output differently.
-    """
-    tokens = []
-    try:
-        # Look for JSON objects with the token shape
-        import re
-        # Find all {...} blobs and try to parse them
-        for match in re.finditer(r'\{[^{}]+\}', text, re.DOTALL):
-            try:
-                obj = json.loads(match.group())
-                if all(k in obj for k in ("session_id", "issued_at", "nonce", "sig")):
-                    tokens.append(obj)
-            except json.JSONDecodeError:
-                pass
-    except Exception:
-        pass
-    return tokens
-
-
-# ---------------------------------------------------------------------------
-# Main
-# ---------------------------------------------------------------------------
 
 async def main() -> None:
-    print(f"[agent] Connecting to MCP at {MCP_URL}")
+    loop_mode = "--loop" in sys.argv
+    state = load_state()
+    print(f"[starter] platform: {MCP_URL}")
+    print(f"[starter] agent: {AGENT_NAME} ({'resuming' if state.get('agent_id') else 'new'})")
 
-    # verify with current ADK docs — McpToolset used as async context manager
-    async with McpToolset(
-        connection_params=StreamableHTTPConnectionParams(url=MCP_URL),
-    ) as toolset:
-        agent = build_agent(toolset)
-        runner = InMemoryRunner(agent=agent)  # verify with current ADK docs
+    runner = build_runner()
+    session = await runner.session_service.create_session(
+        app_name=runner.app_name, user_id="attendee"
+    )
 
-        # Create a session — verify with current ADK docs for session API
-        session = await runner.session_service.create_session(
-            app_name=agent.name,
-            user_id="attendee",
-        )
+    text = await take_turn(runner, session.id, first_turn_prompt(state))
+    if not state.get("agent_id"):
+        agent_id = extract_agent_id(text)
+        if agent_id:
+            state["agent_id"] = agent_id
+            state["name"] = AGENT_NAME
+            save_state(state)
+            print(f"[starter] saved agent_id {agent_id} to {STATE_FILE}")
 
-        prompt = (
-            "Fetch the agenda with list_sessions. "
-            "Then call get_session for the FIRST session only. "
-            "Print a 2-sentence summary and include the proof_of_fetch_token as JSON."
-        )
-        # TODO: customize — change this prompt, loop over more sessions, filter by track, etc.
+    if not loop_mode:
+        print("[starter] one turn done. Run with --loop to keep playing.")
+        return
 
-        print(f"[agent] Sending prompt: {prompt}\n")
-        message = types.Content(
-            role="user",
-            parts=[types.Part(text=prompt)],
-        )
-
-        final_text = ""
-        async for event in runner.run_async(  # verify with current ADK docs
-            user_id="attendee",
-            session_id=session.id,
-            new_message=message,
-        ):
-            # Print agent text output as it streams
-            if hasattr(event, "content") and event.content:
-                for part in event.content.parts:
-                    if hasattr(part, "text") and part.text:
-                        print(part.text, end="", flush=True)
-                        final_text += part.text
-
-        print("\n")
-
-        # Bank any tokens found in the response
-        new_tokens = extract_tokens_from_text(final_text)
-        if new_tokens:
-            existing = load_tokens()
-            # Deduplicate by session_id
-            seen = {t["session_id"] for t in existing}
-            added = [t for t in new_tokens if t["session_id"] not in seen]
-            all_tokens = existing + added
-            save_tokens(all_tokens)
-            print(f"[agent] Banked {len(added)} new token(s). Total: {len(all_tokens)}")
-            if len(all_tokens) >= 5:
-                print("[agent] You have ≥5 tokens! Ready to claim. See AGENT_GUIDE.md for POST /claim.")
-            else:
-                remaining = 5 - len(all_tokens)
-                print(f"[agent] {remaining} more session(s) needed to claim the Wall of Fame.")
-        else:
-            print("[agent] No tokens found in response. Run again or inspect the output above.")
+    print(f"[starter] loop mode: one turn every {LOOP_SECONDS}s. Ctrl-C to stop.")
+    while True:
+        await asyncio.sleep(LOOP_SECONDS)
+        try:
+            await take_turn(
+                runner,
+                session.id,
+                "Take one turn following your strategy priorities. Check "
+                "get_wall first: race any active core, redeem any newly "
+                "started session, otherwise extend or beautify your art.",
+            )
+        except Exception as exc:  # keep the gardener alive through hiccups
+            print(f"[starter] turn failed ({exc}); retrying next cycle")
 
 
 if __name__ == "__main__":

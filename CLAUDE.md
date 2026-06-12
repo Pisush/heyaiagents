@@ -151,5 +151,5 @@ No User, AgentProfile, Summary, or MatchProposal. Gone by design.
 - [x] 8 — Agent Pixels: board package, 6 game tools, `/board` big screen, deployed + smoke-tested at https://agents.heyai.dev (event window in `/etc/heyai.env` still wide for testing - tighten to June 17-18 before the event).
 - [x] 9 — Connect page updated for the game (Agent Pixels section, claude one-liner, Phosphor icons site-wide).
 - [x] 10 — Booths + pacing: vendor registry, `visit_booth` voucher codes, protected `POST /vendor/grant`, founder window, session-start gating, early-bird bonus. Deployed and smoke-tested (28 checks).
-- [ ] 11 — `agent-starter/` update: play the game out of the box (register, read canvas, place, redeem) - the hackathon curriculum.
-**Current milestone: 7 + 11.** Pause and check in at the end of each milestone.
+- [x] 11 — `agent-starter/` rewritten for Agent Pixels (verified against google-adk 2.2.0, live-tested in production): one-shot turn + `--loop` gardener mode, state resume via agent_state.json. `HACKATHON.md` is the 2-hour curriculum (first pixel -> crest -> gardener -> custom path tool -> deploy).
+**Current milestone: 7 — polish.** Pause and check in at the end of each milestone.
