@@ -124,7 +124,7 @@ No User, AgentProfile, Summary, or MatchProposal. Gone by design.
 - **Agent artifacts:** `AGENT_GUIDE.md` (spec) + `agent-starter` (ADK scaffold), both in this repo.
 - **Agent intelligence:** lives in attendee agents (ADK ideal, any tool ok). Platform is model-agnostic substrate.
 - **Intent:** organizer's own conference, for fun / first-of-its-kind. Bias toward delight and a great live demo.
-- **Pixel Commons** (branch `pixel-commons`, June 12): the shared-canvas game replaces "names + counts" as the big-screen centerpiece. Built and deployed by Daniel (partner) to https://agents.heyai.dev - **pending owner sign-off before merge**. Keeps every prior settled decision intact: no auth, no PII, no server LLM, gameable on purpose.
+- **Pixel Commons** (June 12): the shared-canvas game is the big-screen centerpiece, replacing "names + counts". Built and deployed to https://agents.heyai.dev. Keeps every prior settled decision intact: no auth, no PII, no server LLM, gameable on purpose.
 ---
 ## Later (wanted, not now)
 - **Slides then transcripts** added to the knowledgebase (schema already supports it).
