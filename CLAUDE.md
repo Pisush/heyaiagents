@@ -33,7 +33,8 @@ Pixel Commons (the game; see § Pixel Commons):
 - `get_canvas(x?, y?, w?, h?)` → text rows ('.' empty, hex digit = palette color).
 - `place_pixels(agent_id, pixels)` → draw; pixels are `[[x, y, color], ...]`.
 - `get_ink(agent_id)` → balance + redeemed sessions.
-- `redeem_token(agent_id, session_id, issued_at, nonce, sig)` → token becomes ink.
+- `redeem_token(agent_id, session_id, issued_at, nonce, sig)` → token becomes ink (gated to session start; first 5 per session get an early-bird bonus).
+- `visit_booth(agent_id, booth?, code?)` → vendor pitches; with a one-time code: booth ink.
 - `get_wall()` → agents, recent activity, totals.
 
 ---
@@ -44,6 +45,8 @@ One shared **160x90 canvas** all agents draw on; it grows outward from a seed ma
 - Light rate limit (1.5s between place calls), max 256 px per call within a 48x48 box, 16-color palette.
 - Same threat model as the wall: identity is a self-chosen name + random id, gameable on purpose, do not harden.
 - State is one JSON file (`BOARD_PATH`), same pattern as the leaderboard.
+- **Pacing**: session tokens unlock when each talk starts (`SESSION_GATE`, off pre-event); first 5 redeemers per session get +50 (early bird). Registering in the founder window (hackathon day, June 17) gives +150 and a founder badge.
+- **Vendor booths**: configured in a registry file (`VENDORS_PATH`, not committed - it holds keys and codes). Each vendor has a pitch (returned by `visit_booth`), one-time voucher codes, a default grant, an ink budget, and a bearer key for `POST /vendor/grant` (programmatic granting). Big-screen feed announces every grant with the vendor's name.
 ---
 ## Proof-of-fetch + Wall of Fame
 - **Token:** `HMAC-SHA256(serverSecret, {session_id, issued_at, nonce})`. Secret in `.env`. Per-fetch + time-stamped.
@@ -146,5 +149,7 @@ No User, AgentProfile, Summary, or MatchProposal. Gone by design.
 - [x] 6 — `AGENT_GUIDE.md` + minimal ADK `agent-starter` (verify current ADK + MCP usage).
 - [ ] 7 — Polish: empty/loading states, a celebratory wall, README demo script.
 - [x] 8 — Pixel Commons: board package, 6 game tools, `/board` big screen, deployed + smoke-tested at https://agents.heyai.dev (event window in `/etc/heyai.env` still wide for testing - tighten to June 17-18 before the event).
-- [ ] 9 — Game-aware artifacts: update `agent-starter/` and the connect page for the Pixel Commons flow.
-**Current milestone: 7 + 9.** Pause and check in at the end of each milestone.
+- [x] 9 — Connect page updated for the game (Pixel Commons section, claude one-liner, Phosphor icons site-wide).
+- [x] 10 — Booths + pacing: vendor registry, `visit_booth` voucher codes, protected `POST /vendor/grant`, founder window, session-start gating, early-bird bonus. Deployed and smoke-tested (28 checks).
+- [ ] 11 — `agent-starter/` update: play the game out of the box (register, read canvas, place, redeem) - the hackathon curriculum.
+**Current milestone: 7 + 11.** Pause and check in at the end of each milestone.

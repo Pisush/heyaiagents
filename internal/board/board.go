@@ -30,6 +30,9 @@ const (
 	StarterInk    = 150 // granted on register_agent
 	SessionInk    = 250 // granted per redeemed proof-of-fetch token
 	NeighborBonus = 50  // granted to BOTH agents, once per distinct pair
+	FounderBonus  = 150 // extra starter ink for registering in the founder window
+	EarlyBirdInk  = 50  // extra for the first EarlyBirdSlots redeems of a session
+	EarlyBirdSlots = 5
 
 	MaxBatch = 256 // pixels per place_pixels call
 	MaxSpan  = 48  // bounding-box edge limit per batch
@@ -77,6 +80,7 @@ type Agent struct {
 	Social       string          `json:"social,omitempty"`
 	Ink          int             `json:"ink"`
 	Px           int             `json:"px"`
+	Badges       []string        `json:"badges,omitempty"`
 	Redeemed     map[string]bool `json:"redeemed"`
 	Pairs        map[string]bool `json:"pairs"`
 	RegisteredAt time.Time       `json:"registered_at"`
@@ -98,6 +102,11 @@ type state struct {
 	Agents  map[string]*Agent `json:"agents"`
 	Events  []Event           `json:"events"`
 	TotalPx int               `json:"total_px"`
+
+	// Vendor + pacing state.
+	UsedCodes   map[string]bool `json:"used_codes"`   // normalized voucher codes already redeemed
+	VendorSpent map[string]int  `json:"vendor_spent"` // vendor ID -> total ink granted
+	RedeemCount map[string]int  `json:"redeem_count"` // session ID -> redeems so far (early bird)
 }
 
 // Board is the live game state. All exported methods are safe for concurrent use.
@@ -127,11 +136,24 @@ func Open(path string) (*Board, error) {
 		if b.st.Agents == nil {
 			b.st.Agents = map[string]*Agent{}
 		}
+		// Fields added after the first deploy may be absent in older files.
+		if b.st.UsedCodes == nil {
+			b.st.UsedCodes = map[string]bool{}
+		}
+		if b.st.VendorSpent == nil {
+			b.st.VendorSpent = map[string]int{}
+		}
+		if b.st.RedeemCount == nil {
+			b.st.RedeemCount = map[string]int{}
+		}
 	case os.IsNotExist(err):
 		b.st = state{
-			Colors: make([]int16, Width*Height),
-			Owners: make([]string, Width*Height),
-			Agents: map[string]*Agent{},
+			Colors:      make([]int16, Width*Height),
+			Owners:      make([]string, Width*Height),
+			Agents:      map[string]*Agent{},
+			UsedCodes:   map[string]bool{},
+			VendorSpent: map[string]int{},
+			RedeemCount: map[string]int{},
 		}
 		for i := range b.st.Colors {
 			b.st.Colors[i] = -1
@@ -167,8 +189,10 @@ func (b *Board) plantSeed() {
 	b.event("register", "platform up - seed mark planted at center")
 }
 
-// Register creates a new agent and returns a copy of it.
-func (b *Board) Register(name, stack, motto, social string) (Agent, error) {
+// Register creates a new agent and returns a copy of it. founder marks
+// registrations inside the founder window (hackathon day): extra starter ink
+// and a badge.
+func (b *Board) Register(name, stack, motto, social string, founder bool) (Agent, error) {
 	name = sanitize(name, maxNameLen)
 	stack = sanitize(stack, maxNameLen)
 	motto = sanitize(motto, maxFieldLen)
@@ -192,12 +216,79 @@ func (b *Board) Register(name, stack, motto, social string) (Agent, error) {
 
 		RegisteredAt: time.Now().UTC(),
 	}
+	if founder {
+		a.Ink += FounderBonus
+		a.Badges = append(a.Badges, "founder")
+	}
 	b.st.Agents[id] = a
-	b.event("register", fmt.Sprintf("%s joined the commons (stack: %s, +%d starter ink)", name, stack, StarterInk))
+	if founder {
+		b.event("register", fmt.Sprintf("%s joined the commons as a FOUNDER (stack: %s, +%d ink)", name, stack, StarterInk+FounderBonus))
+	} else {
+		b.event("register", fmt.Sprintf("%s joined the commons (stack: %s, +%d starter ink)", name, stack, StarterInk))
+	}
 	if err := b.save(); err != nil {
 		return Agent{}, err
 	}
 	return *a, nil
+}
+
+// FindByName resolves a display name to an agent. It errors when the name is
+// unknown or ambiguous (names are not unique by design; IDs are).
+func (b *Board) FindByName(name string) (Agent, error) {
+	name = strings.TrimSpace(name)
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	var found *Agent
+	for _, a := range b.st.Agents {
+		if strings.EqualFold(a.Name, name) {
+			if found != nil {
+				return Agent{}, fmt.Errorf("name %q is ambiguous - use the agent_id instead", name)
+			}
+			found = a
+		}
+	}
+	if found == nil {
+		return Agent{}, fmt.Errorf("no agent named %q", name)
+	}
+	return *found, nil
+}
+
+// GrantVendor credits ink from a vendor to an agent. code, if non-empty, must
+// be an unused (already normalized) voucher code and is burned. budget caps
+// the vendor's lifetime spend; pass 0 for no cap.
+func (b *Board) GrantVendor(agentID, vendorID, vendorName string, amount, budget int, code string) (int, error) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	a, ok := b.st.Agents[agentID]
+	if !ok {
+		return 0, fmt.Errorf("unknown agent_id %q - call register_agent first", agentID)
+	}
+	if amount <= 0 {
+		return 0, fmt.Errorf("grant amount must be positive")
+	}
+	if code != "" && b.st.UsedCodes[code] {
+		return 0, fmt.Errorf("this code has already been redeemed")
+	}
+	if budget > 0 && b.st.VendorSpent[vendorID]+amount > budget {
+		return 0, fmt.Errorf("%s's ink budget is exhausted", vendorName)
+	}
+	if code != "" {
+		b.st.UsedCodes[code] = true
+	}
+	b.st.VendorSpent[vendorID] += amount
+	a.Ink += amount
+	b.event("redeem", fmt.Sprintf("%s earned %d ink at the %s booth", a.Name, amount, vendorName))
+	if err := b.save(); err != nil {
+		return 0, err
+	}
+	return a.Ink, nil
+}
+
+// VendorSpent reports how much ink a vendor has granted so far.
+func (b *Board) VendorSpent(vendorID string) int {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return b.st.VendorSpent[vendorID]
 }
 
 // Agent returns a copy of the agent with the given ID.
@@ -395,36 +486,67 @@ func (b *Board) Place(id string, pixels [][]int) (PlaceResult, error) {
 	return PlaceResult{Placed: len(batch), InkLeft: a.Ink, Neighbors: names}, nil
 }
 
-// Redeem credits SessionInk for sessionID, once per agent per session. Token
-// signature and event-window checks are the caller's job.
-func (b *Board) Redeem(id, sessionID string) (int, error) {
+// RedeemResult reports what a redeem_token call credited.
+type RedeemResult struct {
+	Ink      int `json:"ink"`
+	Credited int `json:"credited"`
+	// EarlyBird is this agent's position (1-based) among the session's first
+	// redeemers, or 0 when the early-bird slots were already taken.
+	EarlyBird int `json:"early_bird_position,omitempty"`
+}
+
+// Redeem credits SessionInk for sessionID, once per agent per session, plus
+// the early-bird bonus for the first EarlyBirdSlots redeemers. Token
+// signature, event-window, and session-start checks are the caller's job.
+func (b *Board) Redeem(id, sessionID string) (RedeemResult, error) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	a, ok := b.st.Agents[id]
 	if !ok {
-		return 0, fmt.Errorf("unknown agent_id %q - call register_agent first", id)
+		return RedeemResult{}, fmt.Errorf("unknown agent_id %q - call register_agent first", id)
 	}
 	if a.Redeemed[sessionID] {
-		return a.Ink, fmt.Errorf("token for %s already redeemed", sessionID)
+		return RedeemResult{}, fmt.Errorf("token for %s already redeemed", sessionID)
 	}
 	a.Redeemed[sessionID] = true
-	a.Ink += SessionInk
-	b.event("redeem", fmt.Sprintf("%s redeemed a token for %s (+%d ink)", a.Name, sessionID, SessionInk))
-	if err := b.save(); err != nil {
-		return 0, err
+	b.st.RedeemCount[sessionID]++
+	res := RedeemResult{Credited: SessionInk}
+	if pos := b.st.RedeemCount[sessionID]; pos <= EarlyBirdSlots {
+		res.EarlyBird = pos
+		res.Credited += EarlyBirdInk
+		if !hasBadge(a, "early_bird") {
+			a.Badges = append(a.Badges, "early_bird")
+		}
+		b.event("bonus", fmt.Sprintf("%s is early bird #%d for %s (+%d extra)", a.Name, pos, sessionID, EarlyBirdInk))
 	}
-	return a.Ink, nil
+	a.Ink += res.Credited
+	res.Ink = a.Ink
+	b.event("redeem", fmt.Sprintf("%s redeemed a token for %s (+%d ink)", a.Name, sessionID, res.Credited))
+	if err := b.save(); err != nil {
+		return RedeemResult{}, err
+	}
+	return res, nil
+}
+
+func hasBadge(a *Agent, badge string) bool {
+	for _, b := range a.Badges {
+		if b == badge {
+			return true
+		}
+	}
+	return false
 }
 
 // WallAgent is the public view of an agent on the wall.
 type WallAgent struct {
-	Name     string `json:"name"`
-	Stack    string `json:"stack"`
-	Motto    string `json:"motto,omitempty"`
-	Social   string `json:"social,omitempty"`
-	Px       int    `json:"px"`
-	Ink      int    `json:"ink"`
-	Sessions int    `json:"sessions_redeemed"`
+	Name     string   `json:"name"`
+	Stack    string   `json:"stack"`
+	Motto    string   `json:"motto,omitempty"`
+	Social   string   `json:"social,omitempty"`
+	Badges   []string `json:"badges,omitempty"`
+	Px       int      `json:"px"`
+	Ink      int      `json:"ink"`
+	Sessions int      `json:"sessions_redeemed"`
 }
 
 // Snapshot is the public board state served to the big screen and get_wall.
@@ -447,7 +569,7 @@ func (b *Board) Snapshot() Snapshot {
 	for _, a := range b.st.Agents {
 		agents = append(agents, WallAgent{
 			Name: a.Name, Stack: a.Stack, Motto: a.Motto, Social: a.Social,
-			Px: a.Px, Ink: a.Ink, Sessions: len(a.Redeemed),
+			Badges: a.Badges, Px: a.Px, Ink: a.Ink, Sessions: len(a.Redeemed),
 		})
 	}
 	sort.Slice(agents, func(i, j int) bool { return agents[i].Px > agents[j].Px })

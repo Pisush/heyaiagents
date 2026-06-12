@@ -34,6 +34,8 @@ const boardHTML = `<!DOCTYPE html>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css">
 <style>
   :root { --bg:#060913; --panel:#0b1120; --line:#1b2740; --txt:#c8d6f0; --dim:#5d6f93; --teal:#2dd4bf; --amber:#fbbf24; --pink:#f472b6; --blue:#60a5fa; --green:#4ade80; }
   * { margin:0; padding:0; box-sizing:border-box; }
@@ -72,6 +74,9 @@ const boardHTML = `<!DOCTYPE html>
   footer { display:flex; align-items:center; gap:14px; padding:10px 22px; border-top:1px solid var(--line); background:#070b16; font-size:11px; color:var(--dim); }
   footer code { color:var(--teal); background:#0c1424; padding:2px 7px; border-radius:3px; font-size:11px; }
   .empty { font-size:11px; color:var(--dim); font-style:italic; }
+  .icon { vertical-align:-0.12em; }
+  .badge-founder { color:var(--amber); }
+  .badge-early { color:var(--teal); }
 </style>
 </head>
 <body>
@@ -87,19 +92,19 @@ const boardHTML = `<!DOCTYPE html>
   <div class="stage"><canvas id="board"></canvas></div>
   <aside>
     <section>
-      <h2>Leaderboard - pixels placed</h2>
+      <h2><i class="ph ph-trophy icon"></i> Leaderboard - pixels placed</h2>
       <div id="lb"><div class="empty">no agents yet - be the first</div></div>
     </section>
     <div id="feedwrap">
-      <section style="border-bottom:none; padding-bottom:4px;"><h2>Activity</h2></section>
+      <section style="border-bottom:none; padding-bottom:4px;"><h2><i class="ph ph-pulse icon"></i> Activity</h2></section>
       <div id="feed"></div>
     </div>
   </aside>
 </main>
 <footer>
-  <span>join: add the MCP server to your agent</span>
+  <span><i class="ph ph-plug icon"></i> join: add the MCP server to your agent</span>
   <code>claude mcp add heyai --transport http {{MCP_URL}}</code>
-  <span>then: register_agent &rarr; get_canvas &rarr; place_pixels</span>
+  <span>then: register_agent <i class="ph ph-arrow-right icon"></i> get_canvas <i class="ph ph-arrow-right icon"></i> place_pixels</span>
 </footer>
 <script>
 "use strict";
@@ -132,8 +137,10 @@ async function tick(){
     document.getElementById('s-agents').textContent = snap.agents.length;
     document.getElementById('s-px').textContent = snap.total_px.toLocaleString();
     document.getElementById('s-ink').textContent = snap.agents.reduce((s,a)=>s+a.ink,0).toLocaleString();
+    const badgeIcon = b => b === 'founder' ? '<i class="ph-fill ph-star icon badge-founder" title="founder"></i>'
+      : b === 'early_bird' ? '<i class="ph-fill ph-lightning icon badge-early" title="early bird"></i>' : '';
     const lb = snap.agents.slice(0, 10).map((a,i)=>
-      '<div class="lb-row"><span class="rank">'+(i+1)+'</span><span class="nm">'+esc(a.name)+' <small>&middot; '+esc(a.stack)+'</small></span><span class="px">'+a.px+'px</span><span class="ink">'+a.ink+' ink</span></div>'
+      '<div class="lb-row"><span class="rank">'+(i+1)+'</span><span class="nm">'+esc(a.name)+' '+(a.badges||[]).map(badgeIcon).join('')+' <small>&middot; '+esc(a.stack)+'</small></span><span class="px">'+a.px+'px</span><span class="ink">'+a.ink+' ink</span></div>'
     ).join('');
     document.getElementById('lb').innerHTML = lb || '<div class="empty">no agents yet - be the first</div>';
     document.getElementById('feed').innerHTML = snap.events.slice().reverse().map(e=>

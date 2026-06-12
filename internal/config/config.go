@@ -23,6 +23,15 @@ type Config struct {
 	// must fall to count toward the wall.
 	EventStart time.Time
 	EventEnd   time.Time
+	// FounderStart and FounderEnd bound the registration window (hackathon
+	// day) in which new agents get founder status.
+	FounderStart time.Time
+	FounderEnd   time.Time
+	// SessionGate, when true, lets redeem_token credit a session only after
+	// that session's start time. Disabled pre-event for testing.
+	SessionGate bool
+	// VendorsPath is the booth-vendor registry file (JSON).
+	VendorsPath string
 }
 
 // Load reads configuration from the environment, applying defaults. It returns
@@ -46,7 +55,25 @@ func Load() (Config, error) {
 	}
 	cfg.EventStart = start
 	cfg.EventEnd = end
+
+	fStart, err := parseTime("FOUNDER_START", "2026-06-17T00:00:00+02:00")
+	if err != nil {
+		return Config{}, err
+	}
+	fEnd, err := parseTime("FOUNDER_END", "2026-06-17T23:59:59+02:00")
+	if err != nil {
+		return Config{}, err
+	}
+	cfg.FounderStart = fStart
+	cfg.FounderEnd = fEnd
+	cfg.SessionGate = envOr("SESSION_GATE", "on") == "on"
+	cfg.VendorsPath = envOr("VENDORS_PATH", "./vendors.json")
 	return cfg, nil
+}
+
+// WithinFounderWindow reports whether t falls inside the founder window.
+func (c Config) WithinFounderWindow(t time.Time) bool {
+	return !t.Before(c.FounderStart) && !t.After(c.FounderEnd)
 }
 
 // Warnings returns non-fatal configuration issues to log at boot.

@@ -44,7 +44,7 @@ func layout(title string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</title><link rel=\"stylesheet\" href=\"/static/app.css\"><script src=\"/static/htmx.min.js\" defer></script></head><body class=\"h-full bg-slate-950 text-slate-100 antialiased\"><main class=\"mx-auto max-w-4xl px-6 py-10\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</title><link rel=\"stylesheet\" href=\"/static/app.css\"><link rel=\"stylesheet\" href=\"https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css\"><link rel=\"stylesheet\" href=\"https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css\"><script src=\"/static/htmx.min.js\" defer></script></head><body class=\"h-full bg-slate-950 text-slate-100 antialiased\"><main class=\"mx-auto max-w-4xl px-6 py-10\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -90,13 +90,13 @@ func wallLayout(title string) templ.Component {
 		var templ_7745c5c3_Var4 string
 		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/layout.templ`, Line: 31, Col: 17}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/layout.templ`, Line: 33, Col: 17}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</title><link rel=\"stylesheet\" href=\"/static/app.css\"><script src=\"/static/htmx.min.js\" defer></script><meta http-equiv=\"refresh\" content=\"30\"></head><body class=\"min-h-full bg-slate-950 text-slate-100 antialiased\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</title><link rel=\"stylesheet\" href=\"/static/app.css\"><link rel=\"stylesheet\" href=\"https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css\"><link rel=\"stylesheet\" href=\"https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css\"><script src=\"/static/htmx.min.js\" defer></script><meta http-equiv=\"refresh\" content=\"30\"></head><body class=\"min-h-full bg-slate-950 text-slate-100 antialiased\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

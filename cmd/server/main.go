@@ -18,6 +18,7 @@ import (
 	"github.com/pisush/heyaiagents/internal/content"
 	mcpserver "github.com/pisush/heyaiagents/internal/mcp"
 	"github.com/pisush/heyaiagents/internal/store"
+	"github.com/pisush/heyaiagents/internal/vendors"
 	"github.com/pisush/heyaiagents/internal/web"
 	"github.com/pisush/heyaiagents/seed"
 )
@@ -51,6 +52,13 @@ func main() {
 		log.Fatalf("board store: %v", err)
 	}
 
+	// Booth vendors (optional registry file).
+	booths, err := vendors.Load(cfg.VendorsPath)
+	if err != nil {
+		log.Fatalf("vendors: %v", err)
+	}
+	log.Printf("loaded %d booth vendors", len(booths.All()))
+
 	mcpURL := os.Getenv("MCP_PUBLIC_URL")
 	if mcpURL == "" {
 		mcpURL = "http://localhost:" + cfg.Port + "/mcp"
@@ -66,6 +74,7 @@ func main() {
 		Content:     kb,
 		Leaderboard: leaderboard,
 		Board:       pixels,
+		Vendors:     booths,
 		Cfg:         cfg,
 		Secret:      cfg.ServerSecret,
 	})
@@ -73,7 +82,7 @@ func main() {
 	mux.Handle("/mcp/", mcpHandler)
 
 	// Website.
-	site := web.NewHandler(kb, leaderboard, pixels, cfg, mcpURL)
+	site := web.NewHandler(kb, leaderboard, pixels, booths, cfg, mcpURL)
 	site.Routes(mux)
 
 	srv := &http.Server{

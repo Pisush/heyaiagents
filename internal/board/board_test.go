@@ -47,7 +47,7 @@ func seedEdge(t *testing.T, b *Board) (int, int) {
 
 func TestRegisterGrantsStarterInk(t *testing.T) {
 	b := newTestBoard(t)
-	a, err := b.Register("marta", "claude-code", "draws fish", "@marta")
+	a, err := b.Register("marta", "claude-code", "draws fish", "@marta", false)
 	if err != nil {
 		t.Fatalf("Register: %v", err)
 	}
@@ -61,7 +61,7 @@ func TestRegisterGrantsStarterInk(t *testing.T) {
 
 func TestPlaceAdjacentToSeed(t *testing.T) {
 	b := newTestBoard(t)
-	a, _ := b.Register("marta", "claude-code", "", "")
+	a, _ := b.Register("marta", "claude-code", "", "", false)
 	x, y := seedEdge(t, b)
 	res, err := b.Place(a.ID, [][]int{{x, y, 3}})
 	if err != nil {
@@ -74,7 +74,7 @@ func TestPlaceAdjacentToSeed(t *testing.T) {
 
 func TestMustTouchRejected(t *testing.T) {
 	b := newTestBoard(t)
-	a, _ := b.Register("marta", "claude-code", "", "")
+	a, _ := b.Register("marta", "claude-code", "", "", false)
 	_, err := b.Place(a.ID, [][]int{{2, 2, 3}}) // far corner, nothing nearby
 	if err == nil || !strings.Contains(err.Error(), "connect to existing art") {
 		t.Fatalf("expected must-touch error, got %v", err)
@@ -83,7 +83,7 @@ func TestMustTouchRejected(t *testing.T) {
 
 func TestBatchChainsThroughItself(t *testing.T) {
 	b := newTestBoard(t)
-	a, _ := b.Register("marta", "claude-code", "", "")
+	a, _ := b.Register("marta", "claude-code", "", "", false)
 	x, y := seedEdge(t, b)
 	// A short line walking away from the frontier: only the first pixel
 	// touches existing ink; the rest chain through the batch.
@@ -103,8 +103,8 @@ func TestBatchChainsThroughItself(t *testing.T) {
 
 func TestOverwriteOtherAgentBlocked(t *testing.T) {
 	b := newTestBoard(t)
-	a1, _ := b.Register("marta", "claude-code", "", "")
-	a2, _ := b.Register("tom", "cursor", "", "")
+	a1, _ := b.Register("marta", "claude-code", "", "", false)
+	a2, _ := b.Register("tom", "cursor", "", "", false)
 	x, y := seedEdge(t, b)
 	if _, err := b.Place(a1.ID, [][]int{{x, y, 3}}); err != nil {
 		t.Fatalf("Place a1: %v", err)
@@ -120,8 +120,8 @@ func TestOverwriteOtherAgentBlocked(t *testing.T) {
 
 func TestNeighborBonusOncePerPair(t *testing.T) {
 	b := newTestBoard(t)
-	a1, _ := b.Register("marta", "claude-code", "", "")
-	a2, _ := b.Register("tom", "cursor", "", "")
+	a1, _ := b.Register("marta", "claude-code", "", "", false)
+	a2, _ := b.Register("tom", "cursor", "", "", false)
 	x, y := seedEdge(t, b)
 	dir := 1
 	if x > Width/2 {
@@ -157,7 +157,7 @@ func TestNeighborBonusOncePerPair(t *testing.T) {
 
 func TestInsufficientInk(t *testing.T) {
 	b := newTestBoard(t)
-	a, _ := b.Register("marta", "claude-code", "", "")
+	a, _ := b.Register("marta", "claude-code", "", "", false)
 	x, y := seedEdge(t, b)
 	// One batch larger than the starter ink. Built upward from the frontier
 	// (away from the seed mark) so only ink, not ownership, can fail it.
@@ -173,19 +173,90 @@ func TestInsufficientInk(t *testing.T) {
 
 func TestRedeemOncePerSession(t *testing.T) {
 	b := newTestBoard(t)
-	a, _ := b.Register("marta", "claude-code", "", "")
-	ink, err := b.Redeem(a.ID, "session-001")
+	a, _ := b.Register("marta", "claude-code", "", "", false)
+	res, err := b.Redeem(a.ID, "session-001")
 	if err != nil {
 		t.Fatalf("Redeem: %v", err)
 	}
-	if ink != StarterInk+SessionInk {
-		t.Errorf("ink = %d, want %d", ink, StarterInk+SessionInk)
+	// First redeemer of a session is early bird #1.
+	want := StarterInk + SessionInk + EarlyBirdInk
+	if res.Ink != want || res.EarlyBird != 1 {
+		t.Errorf("res = %+v, want ink %d, early bird 1", res, want)
 	}
 	if _, err := b.Redeem(a.ID, "session-001"); err == nil {
 		t.Fatal("expected already-redeemed error")
 	}
 	if _, err := b.Redeem(a.ID, "session-002"); err != nil {
 		t.Fatalf("second session: %v", err)
+	}
+}
+
+func TestEarlyBirdSlotsExhaust(t *testing.T) {
+	b := newTestBoard(t)
+	for i := 0; i <= EarlyBirdSlots; i++ {
+		a, _ := b.Register("agent", "test", "", "", false)
+		res, err := b.Redeem(a.ID, "session-001")
+		if err != nil {
+			t.Fatalf("Redeem %d: %v", i, err)
+		}
+		if i < EarlyBirdSlots && res.EarlyBird != i+1 {
+			t.Errorf("redeem %d: early bird = %d, want %d", i, res.EarlyBird, i+1)
+		}
+		if i == EarlyBirdSlots {
+			if res.EarlyBird != 0 || res.Credited != SessionInk {
+				t.Errorf("redeem %d should not be early bird: %+v", i, res)
+			}
+		}
+	}
+}
+
+func TestFounderRegistration(t *testing.T) {
+	b := newTestBoard(t)
+	a, err := b.Register("marta", "adk", "", "", true)
+	if err != nil {
+		t.Fatalf("Register: %v", err)
+	}
+	if a.Ink != StarterInk+FounderBonus {
+		t.Errorf("ink = %d, want %d", a.Ink, StarterInk+FounderBonus)
+	}
+	if len(a.Badges) != 1 || a.Badges[0] != "founder" {
+		t.Errorf("badges = %v, want [founder]", a.Badges)
+	}
+}
+
+func TestVendorGrantCodeAndBudget(t *testing.T) {
+	b := newTestBoard(t)
+	a, _ := b.Register("marta", "claude-code", "", "", false)
+	ink, err := b.GrantVendor(a.ID, "jetbrains", "JetBrains", 200, 500, "JB7F3K9Q")
+	if err != nil {
+		t.Fatalf("GrantVendor: %v", err)
+	}
+	if ink != StarterInk+200 {
+		t.Errorf("ink = %d, want %d", ink, StarterInk+200)
+	}
+	// Same code twice is rejected.
+	if _, err := b.GrantVendor(a.ID, "jetbrains", "JetBrains", 200, 500, "JB7F3K9Q"); err == nil {
+		t.Fatal("expected used-code error")
+	}
+	// Budget: 200 spent of 500; a 400 grant must fail, 300 must pass.
+	if _, err := b.GrantVendor(a.ID, "jetbrains", "JetBrains", 400, 500, ""); err == nil {
+		t.Fatal("expected budget error")
+	}
+	if _, err := b.GrantVendor(a.ID, "jetbrains", "JetBrains", 300, 500, ""); err != nil {
+		t.Fatalf("grant within budget: %v", err)
+	}
+}
+
+func TestFindByName(t *testing.T) {
+	b := newTestBoard(t)
+	a, _ := b.Register("marta", "claude-code", "", "", false)
+	got, err := b.FindByName("MARTA")
+	if err != nil || got.ID != a.ID {
+		t.Fatalf("FindByName: %v %+v", err, got)
+	}
+	b.Register("marta", "cursor", "", "", false)
+	if _, err := b.FindByName("marta"); err == nil {
+		t.Fatal("expected ambiguity error")
 	}
 }
 
@@ -197,7 +268,7 @@ func TestPersistenceRoundTrip(t *testing.T) {
 		t.Fatalf("Open: %v", err)
 	}
 	b.Cooldown = 0
-	a, _ := b.Register("marta", "claude-code", "", "")
+	a, _ := b.Register("marta", "claude-code", "", "", false)
 	x, y := seedEdge(t, b)
 	if _, err := b.Place(a.ID, [][]int{{x, y, 3}}); err != nil {
 		t.Fatalf("Place: %v", err)
@@ -218,7 +289,7 @@ func TestPersistenceRoundTrip(t *testing.T) {
 
 func TestSanitize(t *testing.T) {
 	b := newTestBoard(t)
-	a, err := b.Register("  <script>marta</script>  ", "claude\ncode", "", "")
+	a, err := b.Register("  <script>marta</script>  ", "claude\ncode", "", "", false)
 	if err != nil {
 		t.Fatalf("Register: %v", err)
 	}

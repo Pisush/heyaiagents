@@ -21,6 +21,7 @@ import (
 	"github.com/pisush/heyaiagents/internal/content"
 	"github.com/pisush/heyaiagents/internal/store"
 	"github.com/pisush/heyaiagents/internal/tokens"
+	"github.com/pisush/heyaiagents/internal/vendors"
 )
 
 // Dependencies groups the state the MCP server needs.
@@ -28,6 +29,7 @@ type Dependencies struct {
 	Content     *content.Store
 	Leaderboard *store.Leaderboard
 	Board       *board.Board
+	Vendors     *vendors.Registry
 	Cfg         config.Config
 	Secret      string
 }
@@ -103,15 +105,21 @@ func NewHandler(deps Dependencies) http.Handler {
 		Description: fmt.Sprintf("Join the Pixel Commons: a shared %dx%d pixel canvas all attendee agents draw on together. Registering grants %d starter ink (1 ink = 1 pixel) and puts your agent card on the big screen. Returns your agent_id - keep it, every move needs it. Then: get_canvas to look, place_pixels to draw (new art must touch existing art), redeem_token after sessions to earn +%d ink each.",
 			board.Width, board.Height, board.StarterInk, board.SessionInk),
 	}, func(ctx context.Context, req *mcp.CallToolRequest, args registerArgs) (*mcp.CallToolResult, any, error) {
-		a, err := deps.Board.Register(args.Name, args.Stack, args.Motto, args.Social)
+		founder := deps.Cfg.WithinFounderWindow(time.Now())
+		a, err := deps.Board.Register(args.Name, args.Stack, args.Motto, args.Social, founder)
 		if err != nil {
 			return nil, nil, err
+		}
+		msg := "Welcome to the commons. Call get_canvas to see the board, then place_pixels to make your mark - it must touch existing art."
+		if founder {
+			msg = fmt.Sprintf("Welcome, FOUNDER. You registered on hackathon day: +%d bonus ink and a founder badge. %s", board.FounderBonus, msg)
 		}
 		return textResult(map[string]any{
 			"agent_id": a.ID,
 			"ink":      a.Ink,
+			"badges":   a.Badges,
 			"board":    map[string]any{"width": board.Width, "height": board.Height, "palette": board.Palette},
-			"message":  "Welcome to the commons. Call get_canvas to see the board, then place_pixels to make your mark - it must touch existing art.",
+			"message":  msg,
 		})
 	})
 
@@ -186,8 +194,8 @@ func NewHandler(deps Dependencies) http.Handler {
 	}
 	mcp.AddTool(srv, &mcp.Tool{
 		Name: "redeem_token",
-		Description: fmt.Sprintf("Convert a proof-of-fetch token (from get_session) into +%d ink for the pixel board. Once per session per agent. The token must be issued within the event window.",
-			board.SessionInk),
+		Description: fmt.Sprintf("Convert a proof-of-fetch token (from get_session) into +%d ink for the pixel board. Once per session per agent; a session's token unlocks when the talk starts. The first %d agents to redeem each session get +%d extra (early bird).",
+			board.SessionInk, board.EarlyBirdSlots, board.EarlyBirdInk),
 	}, func(ctx context.Context, req *mcp.CallToolRequest, args redeemArgs) (*mcp.CallToolResult, any, error) {
 		tok := tokens.Token{SessionID: args.SessionID, IssuedAt: args.IssuedAt, Nonce: args.Nonce, Signature: args.Sig}
 		if !tokens.Verify(deps.Secret, tok) {
@@ -196,14 +204,57 @@ func NewHandler(deps Dependencies) http.Handler {
 		if !deps.Cfg.WithinEventWindow(time.Unix(args.IssuedAt, 0)) {
 			return nil, nil, fmt.Errorf("token issued outside the event window")
 		}
-		if _, ok := deps.Content.Session(args.SessionID); !ok {
+		sess, ok := deps.Content.Session(args.SessionID)
+		if !ok {
 			return nil, nil, fmt.Errorf("session %q not found", args.SessionID)
 		}
-		ink, err := deps.Board.Redeem(args.AgentID, args.SessionID)
+		if deps.Cfg.SessionGate {
+			start, err := time.Parse(time.RFC3339, sess.Time)
+			if err == nil && time.Now().Before(start) {
+				return nil, nil, fmt.Errorf("this session has not started yet - its token unlocks at %s", sess.Time)
+			}
+		}
+		res, err := deps.Board.Redeem(args.AgentID, args.SessionID)
 		if err != nil {
 			return nil, nil, err
 		}
-		return textResult(map[string]any{"ink": ink, "credited": board.SessionInk})
+		return textResult(res)
+	})
+
+	// ---- booths ----
+
+	type boothArgs struct {
+		AgentID string `json:"agent_id" jsonschema:"Your agent_id from register_agent"`
+		Booth   string `json:"booth,omitempty" jsonschema:"Booth ID. Omit to list all booths."`
+		Code    string `json:"code,omitempty" jsonschema:"A one-time voucher code from booth staff. Omit to read the booth's pitch."`
+	}
+	mcp.AddTool(srv, &mcp.Tool{
+		Name:        "visit_booth",
+		Description: "The vendor booths. Without arguments: list booths and their pitches. With a booth: what to do there. With a code from booth staff: redeem it for ink. Tell your human to actually walk over - the codes live in the room.",
+	}, func(ctx context.Context, req *mcp.CallToolRequest, args boothArgs) (*mcp.CallToolResult, any, error) {
+		if args.Code != "" {
+			v, ok := deps.Vendors.ByCode(args.Code)
+			if !ok {
+				return nil, nil, fmt.Errorf("unknown code - check for typos")
+			}
+			ink, err := deps.Board.GrantVendor(args.AgentID, v.ID, v.Name, v.Grant, v.Budget, vendors.NormalizeCode(args.Code))
+			if err != nil {
+				return nil, nil, err
+			}
+			return textResult(map[string]any{"credited": v.Grant, "ink": ink, "booth": v.Name})
+		}
+		if args.Booth != "" {
+			v, ok := deps.Vendors.ByID(args.Booth)
+			if !ok {
+				return nil, nil, fmt.Errorf("unknown booth %q", args.Booth)
+			}
+			return textResult(map[string]any{"booth": v.ID, "name": v.Name, "pitch": v.Pitch, "ink_per_visit": v.Grant})
+		}
+		list := []map[string]any{}
+		for _, v := range deps.Vendors.All() {
+			list = append(list, map[string]any{"booth": v.ID, "name": v.Name, "pitch": v.Pitch, "ink_per_visit": v.Grant})
+		}
+		return textResult(map[string]any{"booths": list})
 	})
 
 	mcp.AddTool(srv, &mcp.Tool{

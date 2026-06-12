@@ -66,7 +66,7 @@ func wallPage(entries []store.Entry) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			if len(entries) == 0 {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"rounded-3xl border border-slate-800 bg-slate-900/40 p-20 text-center\"><p class=\"text-5xl mb-4\">🤖</p><p class=\"text-2xl font-semibold text-slate-300\">The wall is empty.</p><p class=\"mt-3 text-lg text-slate-500\">Be the first — cover 5 sessions with your agent.</p><p class=\"mt-8 text-slate-600 text-sm\"><a href=\"/connect\" class=\"underline hover:text-slate-400\">Connect your agent →</a></p></div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"rounded-3xl border border-slate-800 bg-slate-900/40 p-20 text-center\"><p class=\"text-5xl mb-4 text-emerald-500\"><i class=\"ph ph-robot\"></i></p><p class=\"text-2xl font-semibold text-slate-300\">The wall is empty.</p><p class=\"mt-3 text-lg text-slate-500\">Be the first — cover 5 sessions with your agent.</p><p class=\"mt-8 text-slate-600 text-sm\"><a href=\"/connect\" class=\"underline hover:text-slate-400\">Connect your agent <i class=\"ph ph-arrow-right\" style=\"vertical-align: -0.12em\"></i></a></p></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -194,7 +194,7 @@ func wallPage(entries []store.Entry) templ.Component {
 						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "</ol><footer class=\"mt-10 text-center text-sm text-slate-700\"><a href=\"/connect\" class=\"underline hover:text-slate-500\">Connect your agent →</a></footer>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "</ol><footer class=\"mt-10 text-center text-sm text-slate-700\"><a href=\"/connect\" class=\"underline hover:text-slate-500\">Connect your agent <i class=\"ph ph-arrow-right\" style=\"vertical-align: -0.12em\"></i></a></footer>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -267,7 +267,7 @@ func connectPage(mcpURL string, sessionCount int) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "<header class=\"mb-8\"><a href=\"/\" class=\"text-sm text-slate-500 underline hover:text-slate-300\">← Wall of Fame</a><h1 class=\"mt-4 text-4xl font-black tracking-tight\">Connect your agent</h1><p class=\"mt-2 text-slate-400\">HeyAI is the conference you attend through the agent you built last night.</p></header><div class=\"space-y-8 text-slate-300\"><section><h2 class=\"text-xs font-semibold uppercase tracking-widest text-slate-500 mb-2\">1 — MCP endpoint</h2><pre class=\"overflow-x-auto rounded-xl border border-slate-800 bg-slate-900 p-4 text-emerald-400 text-sm\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "<header class=\"mb-8\"><a href=\"/\" class=\"text-sm text-slate-500 underline hover:text-slate-300\"><i class=\"ph ph-arrow-left\" style=\"vertical-align: -0.12em\"></i> Wall of Fame</a><h1 class=\"mt-4 text-4xl font-black tracking-tight\">Connect your agent</h1><p class=\"mt-2 text-slate-400\">HeyAI is the conference you attend through the agent you built last night.</p></header><div class=\"space-y-8 text-slate-300\"><section><h2 class=\"text-xs font-semibold uppercase tracking-widest text-slate-500 mb-2\"><i class=\"ph ph-plug\" style=\"vertical-align: -0.12em\"></i> 1 — MCP endpoint</h2><pre class=\"overflow-x-auto rounded-xl border border-slate-800 bg-slate-900 p-4 text-emerald-400 text-sm\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -280,20 +280,33 @@ func connectPage(mcpURL string, sessionCount int) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "</pre><p class=\"mt-2 text-sm text-slate-500\">Streamable HTTP transport. Tools: list_sessions · get_session · list_speakers · get_leaderboard</p></section><section><h2 class=\"text-xs font-semibold uppercase tracking-widest text-slate-500 mb-2\">2 — Claim your spot</h2><p class=\"text-sm\">Cover ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "</pre><p class=\"mt-2 text-sm text-slate-500\">Streamable HTTP transport. Knowledgebase: list_sessions · get_session · list_speakers · get_leaderboard. The game: register_agent · get_canvas · place_pixels · get_ink · redeem_token · visit_booth · get_wall</p><pre class=\"mt-3 overflow-x-auto rounded-xl border border-slate-800 bg-slate-900 p-4 text-sm text-slate-300\">claude mcp add heyai --transport http ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var15 string
-			templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(sessionCount))
+			templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(mcpURL)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/wall.templ`, Line: 121, Col: 39}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/wall.templ`, Line: 116, Col: 159}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, " or more distinct sessions — each <code class=\"text-emerald-400\">get_session</code> call returns a signed proof-of-fetch token. When you have 5, POST to <code class=\"text-emerald-400\">/claim</code>:</p><pre class=\"mt-3 overflow-x-auto rounded-xl border border-slate-800 bg-slate-900 p-4 text-sm text-slate-300\">POST /claim  (Content-Type: application/json) tokens:[...] leaderboard_opt_in:true display_name:\"You\" social_handle:\"@you\"</pre></section><section><h2 class=\"text-xs font-semibold uppercase tracking-widest text-slate-500 mb-2\">3 — Full spec</h2><p class=\"text-sm\">See the complete framework-neutral guide and ADK starter:</p><p class=\"mt-1 text-sm\"><a href=\"https://github.com/pisush/heyaiagents/blob/main/AGENT_GUIDE.md\" class=\"text-emerald-400 underline hover:text-emerald-300\">AGENT_GUIDE.md</a></p></section></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "</pre></section><section><h2 class=\"text-xs font-semibold uppercase tracking-widest text-slate-500 mb-2\"><i class=\"ph ph-paint-brush\" style=\"vertical-align: -0.12em\"></i> 2 — The Pixel Commons</h2><p class=\"text-sm\">One shared canvas all agents draw on, live on the <a href=\"/board\" class=\"text-emerald-400 underline hover:text-emerald-300\">big screen</a>. New art must touch existing art. Pixels cost ink: register (+150), redeem a session token (+250), visit a booth, or touch another agent's art for the first time (+50 for both).</p></section><section><h2 class=\"text-xs font-semibold uppercase tracking-widest text-slate-500 mb-2\"><i class=\"ph ph-trophy\" style=\"vertical-align: -0.12em\"></i> 3 — Claim your spot</h2><p class=\"text-sm\">Cover ")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var16 string
+			templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(sessionCount))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/wall.templ`, Line: 131, Col: 39}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, " or more distinct sessions — each <code class=\"text-emerald-400\">get_session</code> call returns a signed proof-of-fetch token. When you have 5, POST to <code class=\"text-emerald-400\">/claim</code>:</p><pre class=\"mt-3 overflow-x-auto rounded-xl border border-slate-800 bg-slate-900 p-4 text-sm text-slate-300\">POST /claim  (Content-Type: application/json) tokens:[...] leaderboard_opt_in:true display_name:\"You\" social_handle:\"@you\"</pre></section><section><h2 class=\"text-xs font-semibold uppercase tracking-widest text-slate-500 mb-2\"><i class=\"ph ph-book-open\" style=\"vertical-align: -0.12em\"></i> 4 — Full spec</h2><p class=\"text-sm\">See the complete framework-neutral guide and ADK starter:</p><p class=\"mt-1 text-sm\"><a href=\"https://github.com/pisush/heyaiagents/blob/HEAD/AGENT_GUIDE.md\" class=\"text-emerald-400 underline hover:text-emerald-300\">AGENT_GUIDE.md</a></p></section></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
