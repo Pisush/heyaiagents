@@ -35,6 +35,7 @@ func (h *Handler) Routes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /claim", h.claim)
 	mux.HandleFunc("GET /board", h.boardPage)
 	mux.HandleFunc("GET /api/board", h.boardAPI)
+	mux.HandleFunc("GET /attend", h.attend)
 	mux.HandleFunc("POST /vendor/grant", h.vendorGrant)
 	mux.HandleFunc("POST /vendor/spawn_core", h.vendorSpawnCore)
 	mux.HandleFunc("POST /admin/remove_agent", h.adminRemoveAgent)
@@ -47,5 +48,12 @@ func (h *Handler) wall(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) connect(w http.ResponseWriter, r *http.Request) {
 	render(w, r, connectPage(h.mcpURL, 5))
+}
+
+// attend serves the printable attendee quickstart. Read from disk on every
+// request so organizers can update the handout by editing one file on the
+// server - no rebuild, no redistribution.
+func (h *Handler) attend(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, "web/static/attend.html")
 }
 
