@@ -32,6 +32,14 @@ type Config struct {
 	SessionGate bool
 	// VendorsPath is the booth-vendor registry file (JSON).
 	VendorsPath string
+	// AdminKey authorizes the moderation endpoints (POST /admin/...).
+	AdminKey string
+	// RequireRegCode, when true, makes register_agent demand a one-time
+	// registration code (handed out at conference check-in). Accountability
+	// without accounts: the code maps an agent to a badge.
+	RequireRegCode bool
+	// RegCodesPath is the JSON file holding valid registration codes.
+	RegCodesPath string
 }
 
 // Load reads configuration from the environment, applying defaults. It returns
@@ -68,6 +76,9 @@ func Load() (Config, error) {
 	cfg.FounderEnd = fEnd
 	cfg.SessionGate = envOr("SESSION_GATE", "on") == "on"
 	cfg.VendorsPath = envOr("VENDORS_PATH", "./vendors.json")
+	cfg.AdminKey = os.Getenv("ADMIN_KEY")
+	cfg.RequireRegCode = envOr("REQUIRE_REG_CODE", "off") == "on"
+	cfg.RegCodesPath = envOr("REG_CODES_PATH", "./regcodes.json")
 	return cfg, nil
 }
 

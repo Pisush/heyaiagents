@@ -126,6 +126,10 @@ type state struct {
 	CoreSeq        int                  `json:"core_seq"`
 	TotalHarvested int                  `json:"total_harvested"`
 	VendorCoreAt   map[string]time.Time `json:"vendor_core_at"` // vendor ID -> last sponsored spawn
+
+	// Accountability + moderation.
+	RegCodeUsed map[string]string `json:"reg_code_used"` // registration code -> agent ID
+	Banned      map[string]bool   `json:"banned"`        // agent IDs removed by moderation
 }
 
 // Board is the live game state. All exported methods are safe for concurrent use.
@@ -168,6 +172,12 @@ func Open(path string) (*Board, error) {
 		if b.st.VendorCoreAt == nil {
 			b.st.VendorCoreAt = map[string]time.Time{}
 		}
+		if b.st.RegCodeUsed == nil {
+			b.st.RegCodeUsed = map[string]string{}
+		}
+		if b.st.Banned == nil {
+			b.st.Banned = map[string]bool{}
+		}
 	case os.IsNotExist(err):
 		b.st = state{
 			Colors:       make([]int16, Width*Height),
@@ -177,6 +187,8 @@ func Open(path string) (*Board, error) {
 			VendorSpent:  map[string]int{},
 			RedeemCount:  map[string]int{},
 			VendorCoreAt: map[string]time.Time{},
+			RegCodeUsed:  map[string]string{},
+			Banned:       map[string]bool{},
 		}
 		for i := range b.st.Colors {
 			b.st.Colors[i] = -1
@@ -212,8 +224,9 @@ func (b *Board) plantSeed() {
 
 // Register creates a new agent and returns a copy of it. founder marks
 // registrations inside the founder window (hackathon day): extra starter ink
-// and a badge.
-func (b *Board) Register(name, stack, motto, social string, founder bool) (Agent, error) {
+// and a badge. regCode, when non-empty, is burned atomically (one agent per
+// code); pool membership is the caller's job.
+func (b *Board) Register(name, stack, motto, social string, founder bool, regCode string) (Agent, error) {
 	name = sanitize(name, maxNameLen)
 	stack = sanitize(stack, maxNameLen)
 	motto = sanitize(motto, maxFieldLen)
@@ -228,6 +241,12 @@ func (b *Board) Register(name, stack, motto, social string, founder bool) (Agent
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
+	if regCode != "" {
+		if owner, used := b.st.RegCodeUsed[regCode]; used {
+			return Agent{}, fmt.Errorf("this registration code is already bound to agent %s", owner)
+		}
+	}
+
 	id := randomHex(4)
 	a := &Agent{
 		ID: id, Name: name, Stack: stack, Motto: motto, Social: social,
@@ -240,6 +259,9 @@ func (b *Board) Register(name, stack, motto, social string, founder bool) (Agent
 	if founder {
 		a.Ink += FounderBonus
 		a.Badges = append(a.Badges, "founder")
+	}
+	if regCode != "" {
+		b.st.RegCodeUsed[regCode] = id
 	}
 	b.st.Agents[id] = a
 	if founder {
@@ -272,6 +294,44 @@ func (b *Board) FindByName(name string) (Agent, error) {
 		return Agent{}, fmt.Errorf("no agent named %q", name)
 	}
 	return *found, nil
+}
+
+// RemoveAgent is the moderation hammer: it erases every pixel the agent
+// placed, deletes the agent, and (when ban is true) blocks the ID and burns
+// any registration code bound to it so the same code cannot re-register.
+// Accepts an agent ID or a unique display name. Returns pixels cleared.
+func (b *Board) RemoveAgent(idOrName string, ban bool) (int, error) {
+	b.mu.Lock()
+	a, ok := b.st.Agents[idOrName]
+	b.mu.Unlock()
+	if !ok {
+		found, err := b.FindByName(idOrName)
+		if err != nil {
+			return 0, err
+		}
+		a = &found
+	}
+
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	cleared := 0
+	for i := range b.st.Owners {
+		if b.st.Owners[i] == a.ID {
+			b.st.Owners[i] = ""
+			b.st.Colors[i] = -1
+			b.st.TotalPx--
+			cleared++
+		}
+	}
+	delete(b.st.Agents, a.ID)
+	if ban {
+		b.st.Banned[a.ID] = true
+	}
+	b.event("place", fmt.Sprintf("moderation: %s's %d pixels were removed from the canvas", a.Name, cleared))
+	if err := b.save(); err != nil {
+		return cleared, err
+	}
+	return cleared, nil
 }
 
 // GrantVendor credits ink from a vendor to an agent. code, if non-empty, must
@@ -369,6 +429,9 @@ func (b *Board) Place(id string, pixels [][]int) (PlaceResult, error) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
+	if b.st.Banned[id] {
+		return PlaceResult{}, fmt.Errorf("this agent was removed by moderation")
+	}
 	a, ok := b.st.Agents[id]
 	if !ok {
 		return PlaceResult{}, fmt.Errorf("unknown agent_id %q - call register_agent first", id)

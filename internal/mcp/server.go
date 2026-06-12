@@ -30,6 +30,7 @@ type Dependencies struct {
 	Leaderboard *store.Leaderboard
 	Board       *board.Board
 	Vendors     *vendors.Registry
+	RegCodes    map[string]bool // valid (normalized) registration codes
 	Cfg         config.Config
 	Secret      string
 }
@@ -99,14 +100,25 @@ func NewHandler(deps Dependencies) http.Handler {
 		Stack  string `json:"stack" jsonschema:"What you are built with, e.g. claude-code, cursor, adk"`
 		Motto  string `json:"motto,omitempty" jsonschema:"Optional one-liner shown on the wall"`
 		Social string `json:"social_handle,omitempty" jsonschema:"Optional social handle of your human"`
+		Code   string `json:"code,omitempty" jsonschema:"Your registration code from conference check-in (one agent per code)"`
 	}
 	mcp.AddTool(srv, &mcp.Tool{
 		Name: "register_agent",
 		Description: fmt.Sprintf("Join Agent Pixels: a shared %dx%d pixel canvas all attendee agents draw on together. Registering grants %d starter ink (1 ink = 1 pixel) and puts your agent card on the big screen. Returns your agent_id - keep it, every move needs it. Then: get_canvas to look, place_pixels to draw (new art must touch existing art), redeem_token after sessions to earn +%d ink each.",
 			board.Width, board.Height, board.StarterInk, board.SessionInk),
 	}, func(ctx context.Context, req *mcp.CallToolRequest, args registerArgs) (*mcp.CallToolResult, any, error) {
+		code := ""
+		if deps.Cfg.RequireRegCode {
+			code = vendors.NormalizeCode(args.Code)
+			if code == "" {
+				return nil, nil, fmt.Errorf("a registration code is required - your human got one at conference check-in (pass it as 'code')")
+			}
+			if !deps.RegCodes[code] {
+				return nil, nil, fmt.Errorf("unknown registration code - check for typos")
+			}
+		}
 		founder := deps.Cfg.WithinFounderWindow(time.Now())
-		a, err := deps.Board.Register(args.Name, args.Stack, args.Motto, args.Social, founder)
+		a, err := deps.Board.Register(args.Name, args.Stack, args.Motto, args.Social, founder, code)
 		if err != nil {
 			return nil, nil, err
 		}

@@ -55,6 +55,7 @@ type bot struct {
 func main() {
 	name := flag.String("name", "go-bot", "agent name on the big screen")
 	motto := flag.String("motto", "no LLM, all speed", "motto on the wall")
+	regCode := flag.String("code", os.Getenv("REG_CODE"), "registration code from check-in (when required)")
 	loop := flag.Bool("loop", false, "keep playing: poll for cores and sessions")
 	every := flag.Duration("every", 45*time.Second, "loop interval")
 	flag.Parse()
@@ -80,9 +81,11 @@ func main() {
 			AgentID string `json:"agent_id"`
 			Ink     int    `json:"ink"`
 		}
-		if err := b.call(ctx, "register_agent", map[string]any{
-			"name": *name, "stack": "go", "motto": *motto,
-		}, &reg); err != nil {
+		args := map[string]any{"name": *name, "stack": "go", "motto": *motto}
+		if *regCode != "" {
+			args["code"] = *regCode
+		}
+		if err := b.call(ctx, "register_agent", args, &reg); err != nil {
 			log.Fatalf("register: %v", err)
 		}
 		b.st.AgentID, b.st.Name = reg.AgentID, *name

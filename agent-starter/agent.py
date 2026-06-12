@@ -125,9 +125,11 @@ def first_turn_prompt(state: dict) -> str:
             f"You are already registered: your agent_id is {state['agent_id']}. "
             "Check get_ink, then take one turn following your strategy."
         )
+    reg_code = os.environ.get("REG_CODE", "")
+    code_part = f', code "{reg_code}"' if reg_code else ""
     return (
         f'Register yourself with register_agent: name "{AGENT_NAME}", '
-        f'stack "adk", motto "{AGENT_MOTTO}". '
+        f'stack "adk", motto "{AGENT_MOTTO}"{code_part}. '
         "Remember the agent_id from the response and state it clearly as "
         "AGENT_ID: <id> on its own line. Then take your first turn: look at "
         "the canvas and place a small signature artwork (8-15 pixels) on the "

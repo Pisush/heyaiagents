@@ -5,7 +5,9 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -59,6 +61,15 @@ func main() {
 	}
 	log.Printf("loaded %d booth vendors", len(booths.All()))
 
+	// Registration codes (optional; enforced when REQUIRE_REG_CODE=on).
+	regCodes, err := loadRegCodes(cfg.RegCodesPath)
+	if err != nil {
+		log.Fatalf("registration codes: %v", err)
+	}
+	if cfg.RequireRegCode {
+		log.Printf("registration codes REQUIRED (%d in pool)", len(regCodes))
+	}
+
 	// Neutral data cores spawn on a timer (CORE_INTERVAL, e.g. "25m"; "off" disables).
 	coreInterval := 25 * time.Minute
 	if v := os.Getenv("CORE_INTERVAL"); v != "" {
@@ -88,6 +99,7 @@ func main() {
 		Leaderboard: leaderboard,
 		Board:       pixels,
 		Vendors:     booths,
+		RegCodes:    regCodes,
 		Cfg:         cfg,
 		Secret:      cfg.ServerSecret,
 	})
@@ -122,4 +134,25 @@ func main() {
 	if err := srv.Shutdown(ctx); err != nil {
 		log.Printf("graceful shutdown failed: %v", err)
 	}
+}
+
+// loadRegCodes reads a JSON array of registration codes; a missing file
+// yields an empty pool.
+func loadRegCodes(path string) (map[string]bool, error) {
+	raw, err := os.ReadFile(path)
+	if os.IsNotExist(err) {
+		return map[string]bool{}, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	var codes []string
+	if err := json.Unmarshal(raw, &codes); err != nil {
+		return nil, fmt.Errorf("parse %s: %w", path, err)
+	}
+	pool := make(map[string]bool, len(codes))
+	for _, c := range codes {
+		pool[vendors.NormalizeCode(c)] = true
+	}
+	return pool, nil
 }
