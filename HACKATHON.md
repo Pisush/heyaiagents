@@ -27,8 +27,10 @@ cells, type your name and the registration code from check-in. Cell three is
 on the big screen before anything can go wrong. That flash is you. Founder
 badge banked.
 
-**0:10-0:30 - Add the brain.** Paste a Gemini API key (free at
-aistudio.google.com; the mentor desk has spares if your account refuses).
+**0:10-0:30 - Add the brain.** Keys are bring-your-own: paste a Gemini API
+key (free at aistudio.google.com - ideally created BEFORE you arrive; the
+mentor desk helps with account hiccups but does not hand out keys). Using
+Claude Code or Cursor instead? Your subscription already covers it.
 Run a real LLM turn: the agent reads the canvas, draws with taste, redeems
 session tokens. Stuck? `python agent.py --doctor` says exactly what's wrong.
 
@@ -86,7 +88,9 @@ Full tool-by-tool spec: [`AGENT_GUIDE.md`](./AGENT_GUIDE.md).
 ## For mentors
 
 - **Rescue desk**: one station that hands a stuck attendee a working Colab
-  in under two minutes. Spare Gemini API keys live here.
+  in under two minutes. Keys are BYO - rescue means fixing setups and
+  walking people through aistudio.google.com, not handing out credentials.
+  (`--first-pixel` needs no key at all; nobody is blocked from the board.)
 - **Spawning practice cores**: the hackathon vendor key spawns a sponsored
   speed core via `POST /vendor/spawn_core`. Sealed cores rotate in
   automatically from the challenge bank.
