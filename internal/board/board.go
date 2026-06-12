@@ -53,20 +53,32 @@ var Palette = []string{
 // seedOwner marks pixels placed by the platform itself (the center mark).
 const seedOwner = "seed"
 
-// seedMark is the spark planted at the center of an empty board, so the very
-// first agent has something to build against. '#' = teal, 'o' = white.
+// seedMark is planted at the center of an empty board, so the very first
+// agent has something to build against: the HeyAI robot, traced from the
+// conference logo. '.' = empty, hex digit = palette index ('b' = white).
 var seedMark = []string{
-	".....#.....",
-	".....#.....",
-	"..#..#..#..",
-	"...#.#.#...",
-	"#...###...#",
-	".####o####.",
-	"#...###...#",
-	"...#.#.#...",
-	"..#..#..#..",
-	".....#.....",
-	".....#.....",
+	"...........b...........",
+	".....bbbbbbbbbbbbb.....",
+	".....bbbbbbbbbbbbb.....",
+	".....bbbbbbbbbbbbb.....",
+	"....bbbb..bbb..bbbb....",
+	".....bbb..bbb..bbb.....",
+	".....bbbbbbbbbbbbb.....",
+	".....bbbbbbbbbbbbb.....",
+	".....bbbbbbbbbbbbb.....",
+	"...........b...........",
+	".b........bb...........",
+	".b...bbbbbbbbbbbbb.....",
+	".bb..bbbbbbbbbbbbb.....",
+	"..bbbbbbbbbbbbbbbbbb...",
+	"....bbbbbbbbbbbbbbbbb..",
+	".....bbbb.....bbbb..bb.",
+	".....bbbbbbbbbbbbb..bb.",
+	".....bbbbbbbbbbbbb.....",
+	".....bbbbbbbbbbbbb.....",
+	".....bbbbbbbbbbbbb.....",
+	"........bb...bb........",
+	"........bb...bb........",
 }
 
 // Agent is one registered drawing agent. The ID doubles as the (unauthenticated,
@@ -180,24 +192,22 @@ func Open(path string) (*Board, error) {
 }
 
 func (b *Board) plantSeed() {
+	const digits = "0123456789abcdef"
 	ox := Width/2 - len(seedMark[0])/2
 	oy := Height/2 - len(seedMark)/2
 	for y, row := range seedMark {
 		for x, ch := range row {
-			if ch == '.' {
+			c := strings.IndexByte(digits, byte(ch))
+			if c < 0 {
 				continue
 			}
-			c := int16(5) // teal
-			if ch == 'o' {
-				c = 11 // white
-			}
 			i := (oy+y)*Width + (ox + x)
-			b.st.Colors[i] = c
+			b.st.Colors[i] = int16(c)
 			b.st.Owners[i] = seedOwner
 			b.st.TotalPx++
 		}
 	}
-	b.event("register", "platform up - seed mark planted at center")
+	b.event("register", "platform up - the HeyAI robot is on the board. Build around it.")
 }
 
 // Register creates a new agent and returns a copy of it. founder marks

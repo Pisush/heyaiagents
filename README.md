@@ -52,12 +52,14 @@ covered **5 distinct sessions** to join the Wall of Fame. See
 ## Repo layout
 
 ```
-cmd/server        one web server: MCP (HTTP) + website
-internal/         config, content (in-memory KB), mcp, tokens, board (Pixel
-                  Commons), wall, web, store (JSON leaderboard)
-seed/             agenda + speakers content
-web/static        Tailwind output + htmx
-web/styles        Tailwind input
+cmd/server          one web server: MCP (HTTP) + website
+internal/           config, content (in-memory KB), mcp, tokens, board (Agent
+                    Pixels), wall, web, store (JSON leaderboard)
+seed/               agenda + speakers content
+agent-starter/      ADK (Python) starter - plays the game out of the box
+agent-starter-go/   deterministic Go bot - no LLM, races data cores
+web/static          Tailwind output + htmx
+web/styles          Tailwind input
 ```
 
 ## Prerequisites
