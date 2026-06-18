@@ -90,7 +90,11 @@ func main() {
 			log.Printf("warning: bad CORE_INTERVAL %q, using %s", v, coreInterval)
 		}
 	}
-	if coreInterval > 0 {
+	if cfg.BoardLocked {
+		pixels.Locked = true
+		log.Println("BOARD IS LOCKED - read-only archive mode")
+	}
+	if coreInterval > 0 && !cfg.BoardLocked {
 		go func() {
 			sealed := false
 			for range time.Tick(coreInterval) {

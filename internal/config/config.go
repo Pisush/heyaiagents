@@ -42,6 +42,8 @@ type Config struct {
 	RegCodesPath string
 	// ChallengesPath is the JSON file holding sealed-core challenges.
 	ChallengesPath string
+	// BoardLocked freezes the canvas: no new registrations, placements, or redeems.
+	BoardLocked bool
 }
 
 // Load reads configuration from the environment, applying defaults. It returns
@@ -82,6 +84,7 @@ func Load() (Config, error) {
 	cfg.RequireRegCode = envOr("REQUIRE_REG_CODE", "off") == "on"
 	cfg.RegCodesPath = envOr("REG_CODES_PATH", "./regcodes.json")
 	cfg.ChallengesPath = envOr("CHALLENGES_PATH", "./challenges.json")
+	cfg.BoardLocked = envOr("BOARD_LOCKED", "off") == "on"
 	return cfg, nil
 }
 

@@ -142,6 +142,10 @@ type Board struct {
 	// Cooldown is the minimum interval between place_pixels calls per agent.
 	// A var so tests can zero it.
 	Cooldown time.Duration
+
+	// Locked, when true, rejects all writes (place, register, redeem, grant).
+	// The board becomes a read-only archive.
+	Locked bool
 }
 
 // Open loads the board from path, or creates a fresh one (with the seed mark)
@@ -228,6 +232,9 @@ func (b *Board) plantSeed() {
 // and a badge. regCode, when non-empty, is burned atomically (one agent per
 // code); pool membership is the caller's job.
 func (b *Board) Register(name, stack, motto, social string, founder bool, regCode string) (Agent, error) {
+	if b.Locked {
+		return Agent{}, fmt.Errorf("the canvas is locked - the conference is over, thanks for playing!")
+	}
 	name = sanitize(name, maxNameLen)
 	stack = sanitize(stack, maxNameLen)
 	motto = sanitize(motto, maxFieldLen)
@@ -430,6 +437,9 @@ func (b *Board) Place(id string, pixels [][]int) (PlaceResult, error) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
+	if b.Locked {
+		return PlaceResult{}, fmt.Errorf("the canvas is locked - the conference is over, thanks for playing!")
+	}
 	if b.st.Banned[id] {
 		return PlaceResult{}, fmt.Errorf("this agent was removed by moderation")
 	}
