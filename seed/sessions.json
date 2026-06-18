@@ -6,8 +6,16 @@
     "time": "2026-06-18T10:30:00+02:00",
     "duration_minutes": 40,
     "abstract": "An inside look at building production-grade agents with Gemini — architecture decisions, agentic capabilities, and the real trade-offs of shipping AI at Google DeepMind.",
-    "speaker_ids": ["spk-001"],
-    "tags": ["agents", "gemini", "production AI", "agent architecture", "google deepmind"],
+    "speaker_ids": [
+      "spk-001"
+    ],
+    "tags": [
+      "agents",
+      "gemini",
+      "production AI",
+      "agent architecture",
+      "google deepmind"
+    ],
     "slides_text": null,
     "transcript_text": null
   },
@@ -18,8 +26,16 @@
     "time": "2026-06-18T11:20:00+02:00",
     "duration_minutes": 30,
     "abstract": "Most AI-coding stories happen in languages where \"mostly right\" ships. In C, mostly right crashes. Two years into building with AI, I shipped a multi-threaded PHP runtime in C — solo. The limiting factor was never the model — it was the trust infrastructure around it: domain skills, specialised reviewers, build and test agents, and adversarial design workflows. Same problem every developer hits the moment they touch FFI or syscalls. Here's what to build before you need it.",
-    "speaker_ids": ["spk-002"],
-    "tags": ["AI-assisted coding", "systems engineering", "C", "low-level programming", "code review agents"],
+    "speaker_ids": [
+      "spk-002"
+    ],
+    "tags": [
+      "AI-assisted coding",
+      "systems engineering",
+      "C",
+      "low-level programming",
+      "code review agents"
+    ],
     "slides_text": null,
     "transcript_text": null
   },
@@ -30,57 +46,78 @@
     "time": "2026-06-18T12:00:00+02:00",
     "duration_minutes": 30,
     "abstract": "Voice commerce is moving beyond chatbots. Google's Multimodal Live API enables 600ms-latency real-time conversations with native audio, multimodal understanding, and natural interruptions via WebSocket streaming. We built an AI shopping assistant that combines Live API with RAG — accessing product catalogs and knowledge bases in real-time through function calling to guide customers through purchases by voice. This talk covers our journey from prototype to production: WebSocket architecture, RAG pipeline design, function calling patterns, and handling edge cases.",
-    "speaker_ids": ["spk-003"],
-    "tags": ["voice AI", "real-time AI", "RAG", "multimodal", "voice commerce", "function calling"],
-    "slides_text": null,
-    "transcript_text": null
-  },
-  {
-    "id": "session-006",
-    "title": "How I Met Your Agent: When Clients Start Opening Pull Requests",
-    "track": "Conference",
-    "time": "2026-06-18T12:40:00+02:00",
-    "duration_minutes": 30,
-    "abstract": "What happens when the client's AI agent enters your development workflow? Ron shares a real-world project where both sides — the developer and a highly involved non-technical client — use AI agents throughout the process. The client participates not just through ideas and feedback, but through specifications, issues, reviews, and pull requests. The talk focuses on building a safe and clear workflow when the client's agent is in the loop: how to define instructions for it, set clear boundaries, translate non-technical ideas into actionable issues, handle PRs from the client side, and keep human ownership over product and technical decisions.",
-    "speaker_ids": ["spk-006"],
-    "tags": ["AI in dev workflow", "client agents", "pull request automation", "human-in-the-loop"],
-    "slides_text": null,
+    "speaker_ids": [
+      "spk-003"
+    ],
+    "tags": [
+      "voice AI",
+      "real-time AI",
+      "RAG",
+      "multimodal",
+      "voice commerce",
+      "function calling"
+    ],
+    "slides_text": "Sasha Denisov (CTO, Brainform.ai) traces the evolution from human assistants to scripted bots to text-only AI bots, then to voice AI agents. He explains the STT (Whisper, Deepgram, Google) to LLM (Gemini, ChatGPT, Claude) to TTS (ElevenLabs, Google, PlayHT) pipeline and its three problems: accumulated latency, no interruptions, lost emotion. Each is solvable: optimized streaming pipelines hit ~275ms (vs ~850ms naive, ~200ms human baseline); interruptions need VAD, echo cancellation, word timestamps, and barge-in logic reacting under 200ms; emotion needs sentiment detection plus expressiveness control. The bigger shift is native multimodal models that hear, think, and speak directly (~450ms, built-in interruptions/emotion): Gemini Live, gpt-realtime, Nova Sonic, Hume EVI 3, Moshi, Qwen3-Omni. Brainform chose Gemini Live API for multimodality, function calling, Google ecosystem, and ~2-3 cents/min pricing. Architecture: browser to Cloud Run proxy (config, RAG, tool calls) to Gemini Live via the genai SDK; knowledge via embeddings plus vector DB or Vertex RAG; function calling for intent-based search with dual delivery (voice plus visual cards). Voice RAG needs 2-3 short sentences, no URLs, max 3-4 items.",
     "transcript_text": null
   },
   {
     "id": "session-004",
     "title": "Agentic Operations: Driving Speed and Efficiency with AI Orchestration",
     "track": "Conference",
-    "time": "2026-06-18T14:30:00+02:00",
+    "time": "2026-06-18T12:40:00+02:00",
     "duration_minutes": 30,
     "abstract": "Traditional automation is no longer enough to keep pace. The future belongs to agentic operations — and we have proved it works. In this session, we share how Delivery Hero successfully transitioned from static workflows to dynamic, AI-driven orchestration, achieving extraordinary operational results. Discover how autonomous AI agents can seamlessly coordinate tasks, make real-time decisions, and eliminate bottlenecks at scale.",
-    "speaker_ids": ["spk-004"],
-    "tags": ["AI orchestration", "agentic workflows", "operations", "enterprise AI", "delivery hero"],
-    "slides_text": null,
+    "speaker_ids": [
+      "spk-004"
+    ],
+    "tags": [
+      "AI orchestration",
+      "agentic workflows",
+      "operations",
+      "enterprise AI",
+      "delivery hero"
+    ],
+    "slides_text": "Yusef Mohamadi (Software Engineer, Delivery Hero) presents Agentic Operations, a hackathon-winning system that automates operational incident investigation. The problem: answering 'why did this go wrong?' takes ~5 hours on average, pulls in 3 people per incident, and is 65% repetitive detective work across monitoring dashboards, databases, logs, and warehouse data. The solution is an AI Orchestrator (via Web UI or Slack) that connects to tools through MCP (Model Context Protocol), routing model calls via LiteLLM and querying multiple MCP servers: a custom team MCP, Kubernetes MCP, and Grafana MCP for logs/metrics, plus business-logic flows and databases. Agentic behavior rests on four pillars (planning, tool use, reflection, multi-agent coordination) following a Plan-Execute-Observe-Adapt-Repeat loop: understand the question, plan which systems to check, query them, synthesize an evidence-backed report, loop for more. Claimed results: investigations drop from 5 hours to under 2 minutes, over 90% MTTR reduction, 45+ hours/month freed, under 1 dollar per investigation. Playbook: pick the highest-friction workflow, map systems, start small with one tool-calling agent, measure, scale. Cautions: verify outputs (hallucination), start read-only then add ACLs, use right-sized models, build org trust.",
     "transcript_text": null
   },
   {
     "id": "session-007",
     "title": "Reimagining the SDLC: How Enpal Built Its Agentic AI Strategy from Scratch",
     "track": "Conference",
-    "time": "2026-06-18T15:10:00+02:00",
+    "time": "2026-06-18T14:30:00+02:00",
     "duration_minutes": 30,
     "abstract": "When AI started reshaping software delivery, Enpal — one of Europe's largest clean energy scaleups — found no peer playbook to follow. So they built their own. Agentic AI is the next abstraction layer, and it demands reimagining the entire SDLC from the ground up — including a world where venture developers entirely outside the tech org deploy code to production. Walk away with a concrete decision-making framework covering the structural choices every engineering org needs to address when building their own agentic AI plan.",
-    "speaker_ids": ["spk-007"],
-    "tags": ["enterprise AI adoption", "SDLC", "agentic strategy", "engineering leadership", "change management"],
-    "slides_text": null,
+    "speaker_ids": [
+      "spk-007"
+    ],
+    "tags": [
+      "enterprise AI adoption",
+      "SDLC",
+      "agentic strategy",
+      "engineering leadership",
+      "change management"
+    ],
+    "slides_text": "Enpal, a German green-energy unicorn with ~300 engineers, rebuilt its software development lifecycle around agentic AI starting January 2026, triggered by a new Claude model in late 2025. Director of Platform Engineering Adi Schacham-Shavit frames AI as 'the next layer of abstraction.' The reimagined SDLC opens production shipping beyond engineers to AI agents and non-engineer 'venture developers,' gated by PRs, AI security scans, and CI/CD guardrails. After contacting ~100 companies, Enpal found no enterprise agentic-AI playbook, so they built their own. Five key investments: Security, Quality, Deployment, PR review, Measurement. Five key decisions: run agentic-AI workshops, stand up a dedicated platform team, buy tooling where possible, run structured experiments, and ring-fence a dedicated AI budget. Core lessons: just start (nobody has it figured out); do not let security/compliance block you, bring the CISO in early, shift left, use agentic-AI security tooling; check license ceilings early. Working well: cross-functional collaboration and spreading engineering best practices. Next: rethinking hiring and team sizes.",
     "transcript_text": null
   },
   {
     "id": "session-005",
     "title": "Runbooks That Think: Executable Checklists with AI in the Loop",
     "track": "Conference",
-    "time": "2026-06-18T15:50:00+02:00",
+    "time": "2026-06-18T15:10:00+02:00",
     "duration_minutes": 30,
     "abstract": "Operational runbooks are static documents that demand constant human attention. What if they could reason, adapt, and execute autonomously? This talk explores how to turn passive checklists into dynamic, AI-driven workflows — covering the architecture, the failure modes, and the practical patterns for keeping humans in the loop when it actually matters.",
-    "speaker_ids": ["spk-005"],
-    "tags": ["runbooks", "AI ops", "agentic infrastructure", "operational AI", "observability"],
-    "slides_text": null,
+    "speaker_ids": [
+      "spk-005"
+    ],
+    "tags": [
+      "runbooks",
+      "AI ops",
+      "agentic infrastructure",
+      "operational AI",
+      "observability"
+    ],
+    "slides_text": "Anthony Alaribe (Founder, Monoscope) argues operational runbooks should be executable markdown with an LLM providing judgment at each step, not free-running agents. He opens with the 1935 Boeing Model 299 crash that birthed the pilot's checklist, and Pronovost's central-line checklist at Johns Hopkins (errors come from faulty systems, not bad apples). Software runbooks fail in practice (where is it, is it accurate, did you follow it). His proposal: runbooks collocated with the codebase, human-readable, executable, and supplying judgment. The contrast: bash scripts (deterministic, no judgment) vs free-running agents (LLM decides everything) vs the document-plus-model judging at each gate. Architecture: markdown with tagged bash blocks (read vs write). Reads append output to a .ctx context file; at each gate a CLI tool sends .ctx to an LLM that returns JSON (enough / go_deeper / next_step, with reasoning). A system prompt constrains it: advise never act, never propose writes, prefer the narrowest query. Writes only execute in a separate human-confirmed pass. A worked 500-error-spike demo walks logs to traces to deploys, diagnoses a schema-breaking deploy, and recommends rollback. Tools: monoscope, pi.dev, rundoc.",
     "transcript_text": null
   }
 ]

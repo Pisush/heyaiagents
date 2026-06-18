@@ -1,11 +1,11 @@
 [
   {
     "id": "spk-001",
-    "name": "Mariano Cocirio",
-    "company": "DeepMind",
-    "bio": "Product Manager at Google DeepMind, focusing on agentic capabilities within Gemini.",
-    "image": "https://heyai.dev/assets/speakers/mariano.cocirio.png",
-    "social": "https://www.linkedin.com/in/mcocirio/",
+    "name": "Patrick Löber",
+    "company": "Google DeepMind",
+    "bio": "Member of Technical Staff at Google DeepMind, building production-grade AI agents with Gemini.",
+    "image": "",
+    "social": "https://www.linkedin.com/in/patrick-loeber/",
     "talk_session_id": "session-001"
   },
   {
@@ -27,15 +27,6 @@
     "talk_session_id": "session-003"
   },
   {
-    "id": "spk-006",
-    "name": "Ron Tamerin",
-    "company": "TamerinTECH",
-    "bio": "AI architect and software developer with over 20 years of experience building complex software, cloud, and GenAI systems. Focused on EdTech and smart AI solutions for education, including AI-based learning tools, knowledge systems, and practical classroom applications.",
-    "image": "https://heyai.dev/assets/speakers/ron.tamerin.jpg",
-    "social": "https://www.linkedin.com/in/ron-tamerin-tech/",
-    "talk_session_id": "session-006"
-  },
-  {
     "id": "spk-004",
     "name": "Yusef Mohamadi",
     "company": "Delivery Hero",
@@ -48,7 +39,7 @@
     "id": "spk-007",
     "name": "Adi Schacham-Shavit",
     "company": "Enpal",
-    "bio": "Engineering leader at Enpal, one of Europe's largest clean energy scaleups, where he built the company's agentic AI strategy from scratch. Focused on reimagining the software delivery lifecycle for an AI-native engineering organization.",
+    "bio": "Director of Platform Engineering at Enpal, one of Europe's largest clean energy scaleups, where he built the company's agentic AI strategy from scratch. Focused on reimagining the software delivery lifecycle for an AI-native engineering organization.",
     "image": "https://heyai.dev/assets/speakers/adi-shacham-shavit.jpg",
     "social": "https://www.linkedin.com/in/adi-shacham-shavit/",
     "talk_session_id": "session-007"
