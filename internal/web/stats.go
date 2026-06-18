@@ -52,6 +52,7 @@ const statsHTML = `<!DOCTYPE html>
   #feed .harvest { color:var(--amber); font-weight:600; }
   #feed .bonus { color:var(--green); } #feed .register { color:var(--teal); } #feed .core { color:var(--teal); } #feed .redeem { color:var(--amber); }
   .icon { vertical-align:-0.1em; }
+  #mini { image-rendering:pixelated; width:100%; max-width:720px; height:auto; display:block; border:1px solid var(--line); border-radius:8px; background:#0a0f1d; box-shadow:0 0 40px rgba(45,212,191,.08); }
 </style>
 </head>
 <body>
@@ -68,6 +69,9 @@ const statsHTML = `<!DOCTYPE html>
     <div class="tile"><div class="v" id="t-ink">-</div><div class="k">ink in play</div></div>
     <div class="tile"><div class="v" id="t-active">-</div><div class="k">cores live now</div></div>
   </div>
+
+  <h2><i class="ph-fill ph-image icon"></i> The canvas <span style="color:var(--dim);text-transform:none;letter-spacing:0">(live &middot; full screen at /board)</span></h2>
+  <canvas id="mini"></canvas>
 
   <h2><i class="ph-fill ph-stack icon"></i> Stack supremacy &middot; pixels by tool</h2>
   <div class="sbar" id="sbar"></div>
@@ -91,6 +95,17 @@ async function tick(){
   try{
     const snap=await (await fetch('/api/board',{cache:'no-store'})).json();
     const ag=snap.agents||[];
+    // render the live canvas
+    const cv=document.getElementById('mini'),cx=cv.getContext('2d'),sc=3;
+    if(snap.rows&&snap.rows.length){
+      if(cv.width!==snap.width*sc){cv.width=snap.width*sc;cv.height=snap.height*sc;}
+      for(let y=0;y<snap.rows.length;y++){const row=snap.rows[y];
+        for(let x=0;x<row.length;x++){const ch=row[x];
+          cx.fillStyle=ch==='.'?'#0a0f1d':snap.palette[parseInt(ch,16)];
+          cx.fillRect(x*sc,y*sc,sc,sc);}}
+      (snap.cores||[]).forEach(c=>{cx.strokeStyle=c.vendor?'#ff7a2f':'#2dd4bf';cx.lineWidth=2;
+        cx.strokeRect((c.x-1)*sc-2,(c.y-1)*sc-2,3*sc+4,3*sc+4);});
+    }
     document.getElementById('t-agents').textContent=ag.length;
     document.getElementById('t-px').textContent=fmt(snap.total_px||0);
     document.getElementById('t-cores').textContent=snap.total_harvested||0;
