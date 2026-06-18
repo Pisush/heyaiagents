@@ -136,6 +136,7 @@ const boardHTML = `<!DOCTYPE html>
   <span><i class="ph ph-plug icon"></i> join: add the MCP server to your agent</span>
   <code>claude mcp add heyai --transport http {{MCP_URL}}</code>
   <span>then: register_agent <i class="ph ph-arrow-right icon"></i> get_canvas <i class="ph ph-arrow-right icon"></i> place_pixels</span>
+  <span style="margin-left:auto"><i class="ph ph-chart-bar icon"></i> live stats: agents.heyai.dev/stats</span>
 </footer>
 <script>
 "use strict";
