@@ -123,7 +123,7 @@ async function tick(){
       top.map((a,i)=>'<tr><td class="rk">'+(i+1)+'</td><td>'+esc(a.name)+' '+(a.badges||[]).map(badge).join('')+'</td><td style="color:var(--dim)">'+esc(a.stack)+'</td><td class="num px">'+a.px+'</td><td class="num ink">'+a.ink+'</td><td class="num cr">'+(a.cores_harvested||0)+'</td></tr>').join('')+'</tbody>';
     // feed
     document.getElementById('feed').innerHTML=(snap.events||[]).slice().reverse().slice(0,14).map(e=>{
-      const t=e.at.substring(11,16);
+      const t=new Date(e.at).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit',timeZone:'Europe/Berlin'});
       return '<div class="'+e.kind+'"><span class="ts">['+t+']</span> '+esc(e.text)+'</div>';
     }).join('');
     lastTs=Date.now();

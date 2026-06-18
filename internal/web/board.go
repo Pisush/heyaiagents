@@ -186,8 +186,7 @@ function fxLoop(){
 requestAnimationFrame(fxLoop);
 
 function fmtTime(iso){
-  const d = new Date(iso);
-  return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+  return new Date(iso).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit',timeZone:'Europe/Berlin'});
 }
 function esc(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 const badgeIcon = b => b === 'founder' ? '<i class="ph-fill ph-star icon badge-founder" title="founder"></i>'
