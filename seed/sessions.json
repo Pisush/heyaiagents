@@ -20,30 +20,10 @@
     "transcript_text": null
   },
   {
-    "id": "session-002",
-    "title": "When \"Mostly Right\" Crashes: AI-Assisted Systems Engineering in C",
-    "track": "Conference",
-    "time": "2026-06-18T11:20:00+02:00",
-    "duration_minutes": 30,
-    "abstract": "Most AI-coding stories happen in languages where \"mostly right\" ships. In C, mostly right crashes. Two years into building with AI, I shipped a multi-threaded PHP runtime in C — solo. The limiting factor was never the model — it was the trust infrastructure around it: domain skills, specialised reviewers, build and test agents, and adversarial design workflows. Same problem every developer hits the moment they touch FFI or syscalls. Here's what to build before you need it.",
-    "speaker_ids": [
-      "spk-002"
-    ],
-    "tags": [
-      "AI-assisted coding",
-      "systems engineering",
-      "C",
-      "low-level programming",
-      "code review agents"
-    ],
-    "slides_text": null,
-    "transcript_text": null
-  },
-  {
     "id": "session-003",
     "title": "Building Voice AI Agent That Listens, Understands, and (Most Importantly) Sells",
     "track": "Conference",
-    "time": "2026-06-18T12:00:00+02:00",
+    "time": "2026-06-18T11:20:00+02:00",
     "duration_minutes": 30,
     "abstract": "Voice commerce is moving beyond chatbots. Google's Multimodal Live API enables 600ms-latency real-time conversations with native audio, multimodal understanding, and natural interruptions via WebSocket streaming. We built an AI shopping assistant that combines Live API with RAG — accessing product catalogs and knowledge bases in real-time through function calling to guide customers through purchases by voice. This talk covers our journey from prototype to production: WebSocket architecture, RAG pipeline design, function calling patterns, and handling edge cases.",
     "speaker_ids": [
@@ -64,7 +44,7 @@
     "id": "session-004",
     "title": "Agentic Operations: Driving Speed and Efficiency with AI Orchestration",
     "track": "Conference",
-    "time": "2026-06-18T12:40:00+02:00",
+    "time": "2026-06-18T12:00:00+02:00",
     "duration_minutes": 30,
     "abstract": "Traditional automation is no longer enough to keep pace. The future belongs to agentic operations — and we have proved it works. In this session, we share how Delivery Hero successfully transitioned from static workflows to dynamic, AI-driven orchestration, achieving extraordinary operational results. Discover how autonomous AI agents can seamlessly coordinate tasks, make real-time decisions, and eliminate bottlenecks at scale.",
     "speaker_ids": [
@@ -84,7 +64,7 @@
     "id": "session-007",
     "title": "Reimagining the SDLC: How Enpal Built Its Agentic AI Strategy from Scratch",
     "track": "Conference",
-    "time": "2026-06-18T14:30:00+02:00",
+    "time": "2026-06-18T13:45:00+02:00",
     "duration_minutes": 30,
     "abstract": "When AI started reshaping software delivery, Enpal — one of Europe's largest clean energy scaleups — found no peer playbook to follow. So they built their own. Agentic AI is the next abstraction layer, and it demands reimagining the entire SDLC from the ground up — including a world where venture developers entirely outside the tech org deploy code to production. Walk away with a concrete decision-making framework covering the structural choices every engineering org needs to address when building their own agentic AI plan.",
     "speaker_ids": [
@@ -104,7 +84,7 @@
     "id": "session-005",
     "title": "Runbooks That Think: Executable Checklists with AI in the Loop",
     "track": "Conference",
-    "time": "2026-06-18T15:10:00+02:00",
+    "time": "2026-06-18T14:30:00+02:00",
     "duration_minutes": 30,
     "abstract": "Operational runbooks are static documents that demand constant human attention. What if they could reason, adapt, and execute autonomously? This talk explores how to turn passive checklists into dynamic, AI-driven workflows — covering the architecture, the failure modes, and the practical patterns for keeping humans in the loop when it actually matters.",
     "speaker_ids": [

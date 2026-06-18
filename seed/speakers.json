@@ -9,15 +9,6 @@
     "talk_session_id": "session-001"
   },
   {
-    "id": "spk-002",
-    "name": "Johan Janssens",
-    "company": "Joomla!",
-    "bio": "Joomla! co-founder. Now building a multi-threaded PHP runtime in C, solo, with AI.",
-    "image": "https://heyai.dev/assets/speakers/johan.janssens.jpg",
-    "social": "https://twitter.com/johanjanssens",
-    "talk_session_id": "session-002"
-  },
-  {
     "id": "spk-003",
     "name": "Sasha Denisov",
     "company": "Brainform.ai",
