@@ -30,7 +30,9 @@ func NewHandler(c *content.Store, lb *store.Leaderboard, pb *board.Board, vr *ve
 
 // Routes registers the website routes onto mux.
 func (h *Handler) Routes(mux *http.ServeMux) {
-	mux.HandleFunc("GET /{$}", h.wall)
+	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/connect", http.StatusFound)
+	})
 	mux.HandleFunc("GET /connect", h.connect)
 	mux.HandleFunc("POST /claim", h.claim)
 	mux.HandleFunc("GET /board", h.boardPage)

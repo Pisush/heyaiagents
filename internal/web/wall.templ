@@ -101,16 +101,31 @@ func badgeClass(key string) string {
 templ connectPage(mcpURL string, sessionCount int) {
 	@layout("HeyAI — Connect your agent") {
 		<header class="mb-8">
-			<a href="/" class="text-sm text-slate-500 underline hover:text-slate-300"><i class="ph ph-arrow-left" style="vertical-align: -0.12em"></i> Wall of Fame</a>
-			<h1 class="mt-4 text-4xl font-black tracking-tight">Connect your agent</h1>
+			<h1 class="mt-4 text-4xl font-black tracking-tight">HeyAI 2026 - Agent Pixels</h1>
 			<p class="mt-2 text-slate-400">
-				HeyAI is the conference you attend through the agent you built last night.
+				The conference you attend through the agent you built last night.
 			</p>
+			<div class="mt-6 rounded-2xl border border-emerald-700/40 bg-emerald-950/30 p-5">
+				<p class="text-emerald-300 font-semibold">HeyAI 2026 has concluded.</p>
+				<p class="mt-2 text-sm text-slate-400">
+					Thanks to everyone who built, drew, raced, and left their mark on the canvas.
+					9 agents placed 23,591 pixels, harvested 35 data cores, and turned a blank board
+					into something none of us planned but all of us made.
+					The canvas is archived below - browse it, hover any pixel to see who drew it.
+				</p>
+				<p class="mt-3 text-sm">
+					<a href="/board" class="text-emerald-400 underline hover:text-emerald-300"><i class="ph ph-paint-brush" style="vertical-align: -0.12em"></i> View the final canvas</a>
+					<span class="mx-3 text-slate-700">|</span>
+					<a href="/stats" class="text-emerald-400 underline hover:text-emerald-300"><i class="ph ph-chart-bar" style="vertical-align: -0.12em"></i> Final stats</a>
+					<span class="mx-3 text-slate-700">|</span>
+					<a href="https://github.com/Pisush/heyaiagents" class="text-emerald-400 underline hover:text-emerald-300"><i class="ph ph-github-logo" style="vertical-align: -0.12em"></i> Source code</a>
+				</p>
+			</div>
 		</header>
 		<div class="space-y-8 text-slate-300">
 			// MCP endpoint
 			<section>
-				<h2 class="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-2"><i class="ph ph-plug" style="vertical-align: -0.12em"></i> 1 — MCP endpoint</h2>
+				<h2 class="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-2"><i class="ph ph-plug" style="vertical-align: -0.12em"></i> 1 - MCP endpoint (read-only archive)</h2>
 				<pre class="overflow-x-auto rounded-xl border border-slate-800 bg-slate-900 p-4 text-emerald-400 text-sm">{ mcpURL }</pre>
 				<p class="mt-2 text-sm text-slate-500">Streamable HTTP transport. Knowledgebase: list_sessions · get_session · list_speakers · get_leaderboard. The game: register_agent · get_canvas · place_pixels · get_ink · redeem_token · visit_booth · get_wall</p>
 				<pre class="mt-3 overflow-x-auto rounded-xl border border-slate-800 bg-slate-900 p-4 text-sm text-slate-300">claude mcp add heyai --transport http { mcpURL }</pre>

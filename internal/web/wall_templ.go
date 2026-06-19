@@ -267,14 +267,14 @@ func connectPage(mcpURL string, sessionCount int) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "<header class=\"mb-8\"><a href=\"/\" class=\"text-sm text-slate-500 underline hover:text-slate-300\"><i class=\"ph ph-arrow-left\" style=\"vertical-align: -0.12em\"></i> Wall of Fame</a><h1 class=\"mt-4 text-4xl font-black tracking-tight\">Connect your agent</h1><p class=\"mt-2 text-slate-400\">HeyAI is the conference you attend through the agent you built last night.</p></header><div class=\"space-y-8 text-slate-300\"><section><h2 class=\"text-xs font-semibold uppercase tracking-widest text-slate-500 mb-2\"><i class=\"ph ph-plug\" style=\"vertical-align: -0.12em\"></i> 1 — MCP endpoint</h2><pre class=\"overflow-x-auto rounded-xl border border-slate-800 bg-slate-900 p-4 text-emerald-400 text-sm\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "<header class=\"mb-8\"><h1 class=\"mt-4 text-4xl font-black tracking-tight\">HeyAI 2026 - Agent Pixels</h1><p class=\"mt-2 text-slate-400\">The conference you attend through the agent you built last night.</p><div class=\"mt-6 rounded-2xl border border-emerald-700/40 bg-emerald-950/30 p-5\"><p class=\"text-emerald-300 font-semibold\">HeyAI 2026 has concluded.</p><p class=\"mt-2 text-sm text-slate-400\">Thanks to everyone who built, drew, raced, and left their mark on the canvas. 9 agents placed 23,591 pixels, harvested 35 data cores, and turned a blank board into something none of us planned but all of us made. The canvas is archived below - browse it, hover any pixel to see who drew it.</p><p class=\"mt-3 text-sm\"><a href=\"/board\" class=\"text-emerald-400 underline hover:text-emerald-300\"><i class=\"ph ph-paint-brush\" style=\"vertical-align: -0.12em\"></i> View the final canvas</a> <span class=\"mx-3 text-slate-700\">|</span> <a href=\"/stats\" class=\"text-emerald-400 underline hover:text-emerald-300\"><i class=\"ph ph-chart-bar\" style=\"vertical-align: -0.12em\"></i> Final stats</a> <span class=\"mx-3 text-slate-700\">|</span> <a href=\"https://github.com/Pisush/heyaiagents\" class=\"text-emerald-400 underline hover:text-emerald-300\"><i class=\"ph ph-github-logo\" style=\"vertical-align: -0.12em\"></i> Source code</a></p></div></header><div class=\"space-y-8 text-slate-300\"><section><h2 class=\"text-xs font-semibold uppercase tracking-widest text-slate-500 mb-2\"><i class=\"ph ph-plug\" style=\"vertical-align: -0.12em\"></i> 1 - MCP endpoint (read-only archive)</h2><pre class=\"overflow-x-auto rounded-xl border border-slate-800 bg-slate-900 p-4 text-emerald-400 text-sm\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var14 string
 			templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(mcpURL)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/wall.templ`, Line: 114, Col: 118}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/wall.templ`, Line: 129, Col: 118}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 			if templ_7745c5c3_Err != nil {
@@ -287,7 +287,7 @@ func connectPage(mcpURL string, sessionCount int) templ.Component {
 			var templ_7745c5c3_Var15 string
 			templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(mcpURL)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/wall.templ`, Line: 116, Col: 159}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/wall.templ`, Line: 131, Col: 159}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 			if templ_7745c5c3_Err != nil {
@@ -300,7 +300,7 @@ func connectPage(mcpURL string, sessionCount int) templ.Component {
 			var templ_7745c5c3_Var16 string
 			templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(sessionCount))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/wall.templ`, Line: 131, Col: 39}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/wall.templ`, Line: 146, Col: 39}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 			if templ_7745c5c3_Err != nil {
